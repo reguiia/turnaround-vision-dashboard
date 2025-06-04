@@ -71,15 +71,15 @@ const Index = () => {
           </div>
 
           {/* Bookies Board and Top Risks */}
-          <div className="col-span-6">
+          <div className="col-span-12">
             <BookiesBoard />
           </div>
           <div className="col-span-6">
             <TopRisks />
           </div>
 
-          {/* Action Log Status - Full width */}
-          <div className="col-span-12">
+          {/* Action Log Status  */}
+          <div className="col-span-6">
             <ActionLogStatus />
           </div>
 
