@@ -75,7 +75,7 @@ export const TopRisks = () => {
                 style={{ backgroundColor: colors[index] }}
               ></div>
               <span className="flex-1 text-xs">{risk.name}</span>
-              <span className="font-semibold text-xs">Score: {risk.score}</span>
+              
             </div>
           ))}
         </div>
