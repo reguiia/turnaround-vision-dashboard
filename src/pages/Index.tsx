@@ -12,6 +12,7 @@ import { ActionLogStatus } from '@/components/ActionLogStatus';
 import { MaterialTracker } from '@/components/MaterialTracker';
 import { ServicesTracker } from '@/components/ServicesTracker';
 import { ExcelHandler } from '@/components/ExcelHandler';
+import { ProgressByDiscipline } from '@/components/ProgressByDiscipline';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -75,7 +76,7 @@ const Index = () => {
             <BookiesBoard />
           </div>
           <div className="col-span-7">
-            <BookiesBoard />
+            <ProgressByDiscipline />
           </div>
           <div className="col-span-6">
             <TopRisks />
