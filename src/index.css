@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,5 +98,42 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Print styles for A3 landscape */
+@media print {
+  @page {
+    size: A3 landscape;
+    margin: 0.5in;
+  }
+  
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .print\\:hidden {
+    display: none !important;
+  }
+  
+  .print\\:gap-4 {
+    gap: 1rem !important;
+  }
+  
+  /* Ensure charts and content scale properly */
+  .recharts-wrapper {
+    width: 100% !important;
+    height: auto !important;
+  }
+  
+  /* Optimize card sizes for print */
+  .grid {
+    break-inside: avoid;
+  }
+  
+  /* Ensure all content fits on page */
+  .space-y-6 > * {
+    margin-bottom: 1rem !important;
   }
 }
