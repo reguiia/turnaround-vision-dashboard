@@ -43,8 +43,8 @@ const Index = () => {
         {/* Header with Controls */}
         <div className="flex justify-between items-center print:hidden">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">Turnaround Vision Dashboard</h1>
-            <p className="text-lg text-gray-600">Comprehensive TA Project KPI Overview</p>
+            <h1 className="text-4xl font-bold text-gray-900">Turnaround Management Dashboard</h1>
+            <p className="text-lg text-gray-600">Driven by Precision, Powered by Teamwork...</p>
           </div>
           <div className="flex gap-3">
             <ExcelHandler />
