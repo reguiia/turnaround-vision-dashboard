@@ -16,63 +16,66 @@ export const TopRisks = () => {
 
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm h-[500px]">
-      <CardHeader>
+      <CardHeader className="pb-2">
         <CardTitle className="text-xl font-bold text-gray-900">Top 5 Risks</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              type="number" 
-              dataKey="probability" 
-              name="Probability" 
-              unit="%" 
-              domain={[0, 100]}
-              label={{ value: 'Probability (%)', position: 'insideBottom', offset: -10 }}
-            />
-            <YAxis 
-              type="number" 
-              dataKey="impact" 
-              name="Impact" 
-              unit="%" 
-              domain={[0, 100]}
-              label={{ value: 'Impact (%)', angle: -90, position: 'insideLeft' }}
-            />
-            <Tooltip 
-              cursor={{ strokeDasharray: '3 3' }}
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  const data = payload[0].payload;
-                  return (
-                    <div className="bg-white p-3 border rounded shadow-lg">
-                      <p className="font-semibold">{data.name}</p>
-                      <p>Probability: {data.probability}%</p>
-                      <p>Impact: {data.impact}%</p>
-                      <p>Risk Score: {data.score}</p>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Scatter name="Risks" data={risks}>
-              {risks.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index]} />
-              ))}
-            </Scatter>
-          </ScatterChart>
-        </ResponsiveContainer>
+      <CardContent className="pt-0">
+        <div className="h-[240px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <ScatterChart margin={{ top: 10, right: 10, bottom: 30, left: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                type="number" 
+                dataKey="probability" 
+                name="Probability" 
+                unit="%" 
+                domain={[0, 100]}
+                label={{ value: 'Probability (%)', position: 'insideBottom', offset: -10 }}
+              />
+              <YAxis 
+                type="number" 
+                dataKey="impact" 
+                name="Impact" 
+                unit="%" 
+                domain={[0, 100]}
+                label={{ value: 'Impact (%)', angle: -90, position: 'insideLeft' }}
+              />
+              <Tooltip 
+                cursor={{ strokeDasharray: '3 3' }}
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-white p-3 border rounded shadow-lg">
+                        <p className="font-semibold">{data.name}</p>
+                        <p>Probability: {data.probability}%</p>
+                        <p>Impact: {data.impact}%</p>
+                        <p>Risk Score: {data.score}</p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Scatter name="Risks" data={risks}>
+                {risks.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={colors[index]} />
+                ))}
+              </Scatter>
+            </ScatterChart>
+          </ResponsiveContainer>
+        </div>
         
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 space-y-2 max-h-[160px] overflow-y-auto">
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">Risk Legend</h4>
           {risks.map((risk, index) => (
-            <div key={risk.id} className="flex items-center gap-3 text-sm">
+            <div key={risk.id} className="flex items-center gap-3 text-sm py-1">
               <div 
-                className="w-4 h-4 rounded-full" 
+                className="w-4 h-4 rounded-full flex-shrink-0" 
                 style={{ backgroundColor: colors[index] }}
               ></div>
-              <span className="flex-1">{risk.name}</span>
-              <span className="font-semibold">Score: {risk.score}</span>
+              <span className="flex-1 text-xs">{risk.name}</span>
+              <span className="font-semibold text-xs">Score: {risk.score}</span>
             </div>
           ))}
         </div>
