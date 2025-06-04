@@ -149,12 +149,60 @@ export const ExcelHandler = () => {
     const ws8 = XLSX.utils.json_to_sheet(commentsData);
     XLSX.utils.book_append_sheet(workbook, ws8, 'Comments-Notes');
 
+    // Sheet9: Deliverables Status
+    const deliverablesStatusData = [
+      // Phase 1 Deliverables
+      { Phase: 'Phase 1', Deliverable: 'Work list development', Progress: 100, Status: 'Complete', Due_Date: '15/05/2025', Owner: 'Engineering Team' },
+      { Phase: 'Phase 1', Deliverable: 'Scope optimisation (review & challenge) carried out', Progress: 100, Status: 'Complete', Due_Date: '20/05/2025', Owner: 'Project Manager' },
+      { Phase: 'Phase 1', Deliverable: 'Scope freeze (all scope, start Addendum process)', Progress: 100, Status: 'Complete', Due_Date: '25/05/2025', Owner: 'Project Manager' },
+      { Phase: 'Phase 1', Deliverable: 'Level II schedule created (reconcile duration with Business Plan target)', Progress: 100, Status: 'Complete', Due_Date: '30/05/2025', Owner: 'Planning Team' },
+      { Phase: 'Phase 1', Deliverable: "'Leftover scope' materials ordered & delivery dates confirmed", Progress: 100, Status: 'Complete', Due_Date: '05/06/2025', Owner: 'Procurement Team' },
+      { Phase: 'Phase 1', Deliverable: 'Stock material reservation process completed (for opportunity scope)', Progress: 100, Status: 'Complete', Due_Date: '10/06/2025', Owner: 'Procurement Team' },
+      { Phase: 'Phase 1', Deliverable: 'Develop contracting strategy', Progress: 100, Status: 'Complete', Due_Date: '15/06/2025', Owner: 'Contracts Team' },
+      { Phase: 'Phase 1', Deliverable: 'Risk & Opportunity Register set up', Progress: 100, Status: 'Complete', Due_Date: '20/06/2025', Owner: 'Risk Manager' },
+      { Phase: 'Phase 1', Deliverable: 'Initiate TA specific HSSE Plan', Progress: 100, Status: 'Complete', Due_Date: '25/06/2025', Owner: 'HSSE Manager' },
+      { Phase: 'Phase 1', Deliverable: 'TAR 2', Progress: 100, Status: 'Complete', Due_Date: '30/06/2025', Owner: 'Project Team' },
+      
+      // Phase 2 Deliverables
+      { Phase: 'Phase 2', Deliverable: 'Detailed Work Order Operations Completed (including Projects and Plant changes)', Progress: 85, Status: 'In Progress', Due_Date: '15/07/2025', Owner: 'Operations Team' },
+      { Phase: 'Phase 2', Deliverable: 'ENG MOCs : Detailed Engineering Complete (AFC packages issued)', Progress: 90, Status: 'In Progress', Due_Date: '20/07/2025', Owner: 'Engineering Team' },
+      { Phase: 'Phase 2', Deliverable: 'Operational preparation completed (S/D & S/U procedures, decontamination, isolation)', Progress: 70, Status: 'In Progress', Due_Date: '25/07/2025', Owner: 'Operations Team' },
+      { Phase: 'Phase 2', Deliverable: 'Detailed work pack completed and reviewed (N2 Purging, Leak Testing, Vessels H-testing)', Progress: 60, Status: 'In Progress', Due_Date: '30/07/2025', Owner: 'Technical Team' },
+      { Phase: 'Phase 2', Deliverable: 'Multi-disciplinary Integrated Execution Schedule issued, reconciled with Business Plan Targets', Progress: 80, Status: 'In Progress', Due_Date: '05/08/2025', Owner: 'Planning Team' },
+      { Phase: 'Phase 2', Deliverable: 'Conduct review of complex work scopes, critical and near-critical path jobs', Progress: 75, Status: 'In Progress', Due_Date: '10/08/2025', Owner: 'Technical Team' },
+      { Phase: 'Phase 2', Deliverable: 'Schedule Optimisation carried out', Progress: 85, Status: 'In Progress', Due_Date: '15/08/2025', Owner: 'Planning Team' },
+      { Phase: 'Phase 2', Deliverable: 'Materials ordered and delivery dates confirmed', Progress: 90, Status: 'In Progress', Due_Date: '20/08/2025', Owner: 'Procurement Team' },
+      { Phase: 'Phase 2', Deliverable: 'Purchase orders for vendors providing services in place and availability confirmed', Progress: 80, Status: 'In Progress', Due_Date: '25/08/2025', Owner: 'Procurement Team' },
+      { Phase: 'Phase 2', Deliverable: 'Budget Review performed and issued', Progress: 95, Status: 'In Progress', Due_Date: '30/08/2025', Owner: 'Finance Team' },
+      
+      // Phase 3 Deliverables
+      { Phase: 'Phase 3', Deliverable: 'All Materials (including Bagging and Tagging) available', Progress: 30, Status: 'Planned', Due_Date: '15/09/2025', Owner: 'Procurement Team' },
+      { Phase: 'Phase 3', Deliverable: 'All Personnel identified (named) and trained for mobilisation', Progress: 20, Status: 'Planned', Due_Date: '20/09/2025', Owner: 'HR Team' },
+      { Phase: 'Phase 3', Deliverable: 'Pre-Turnaround activities (Prepare the Site) completed', Progress: 25, Status: 'Planned', Due_Date: '25/09/2025', Owner: 'Site Team' },
+      { Phase: 'Phase 3', Deliverable: 'Complete and communicate execution phase administration plan', Progress: 15, Status: 'Planned', Due_Date: '30/09/2025', Owner: 'Admin Team' },
+      { Phase: 'Phase 3', Deliverable: 'Final Assurance Review', Progress: 10, Status: 'Planned', Due_Date: '31/10/2025', Owner: 'QA Team' },
+      
+      // Phase 4 Deliverables
+      { Phase: 'Phase 4', Deliverable: 'Daily execution monitoring', Progress: 0, Status: 'Not Started', Due_Date: '01/11/2025', Owner: 'Execution Team' },
+      { Phase: 'Phase 4', Deliverable: 'Real-time progress tracking', Progress: 0, Status: 'Not Started', Due_Date: '01/11/2025', Owner: 'Planning Team' },
+      { Phase: 'Phase 4', Deliverable: 'Issue resolution and escalation', Progress: 0, Status: 'Not Started', Due_Date: '01/11/2025', Owner: 'Project Manager' },
+      { Phase: 'Phase 4', Deliverable: 'Safety compliance monitoring', Progress: 0, Status: 'Not Started', Due_Date: '01/11/2025', Owner: 'HSSE Manager' },
+      { Phase: 'Phase 4', Deliverable: 'Quality assurance checks', Progress: 0, Status: 'Not Started', Due_Date: '01/11/2025', Owner: 'QA Team' },
+      
+      // Phase 5 Deliverables
+      { Phase: 'Phase 5', Deliverable: 'Internal After Action Review Held', Progress: 0, Status: 'Not Started', Due_Date: '20/12/2025', Owner: 'Project Team' },
+      { Phase: 'Phase 5', Deliverable: 'Close out Report Completed', Progress: 0, Status: 'Not Started', Due_Date: '15/01/2026', Owner: 'Project Manager' },
+      { Phase: 'Phase 5', Deliverable: 'Turnaround After Action Review (AAR) completed', Progress: 0, Status: 'Not Started', Due_Date: '31/01/2026', Owner: 'Project Team' }
+    ];
+    const ws9 = XLSX.utils.json_to_sheet(deliverablesStatusData);
+    XLSX.utils.book_append_sheet(workbook, ws9, 'Deliverables Status');
+
     // Export the file
     XLSX.writeFile(workbook, 'turnaround_dashboard_comprehensive.xlsx');
     
     toast({
       title: "Export Successful",
-      description: "Complete dashboard data exported with all 8 sheets successfully."
+      description: "Complete dashboard data exported with all 9 sheets including deliverables status."
     });
   };
 
