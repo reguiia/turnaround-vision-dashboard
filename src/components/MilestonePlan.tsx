@@ -126,7 +126,7 @@ export const MilestonePlan = () => {
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-gray-900">5-Phase Milestone Plan</CardTitle>
+        <CardTitle className="text-2xl font-bold text-gray-900">Milestone Plan</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
