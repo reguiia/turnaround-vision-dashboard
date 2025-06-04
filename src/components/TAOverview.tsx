@@ -6,13 +6,13 @@ import { Calendar, MapPin, DollarSign, Clock } from 'lucide-react';
 
 export const TAOverview = () => {
   const projectInfo = {
-    name: "Major Turnaround 2025",
-    location: "Refinery Unit A",
-    duration: "45 days",
+    name: "Miskar Turnaround 2025",
+    location: "Miskar Platform, Hannibal Plant",
+    duration: "12 days",
     startDate: "01/11/2025",
-    endDate: "15/12/2025",
-    budget: "$12.5M",
-    mainDrivers: ["Catalyst Replacement", "Heat Exchanger Maintenance", "Safety Upgrades"],
+    endDate: "12/11/2025",
+    budget: "$1.5M",
+    mainDrivers: ["Miskar DCS Upgrade", "HBG-2030 Mechanical cleaning", "Leftover MOCs from TA24"],
     status: "Phase 2 - Detailed Planning"
   };
 
@@ -24,7 +24,7 @@ export const TAOverview = () => {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="space-y-2">
-            <h3 className="font-semibold text-blue-100">Project Details</h3>
+            <h3 className="font-semibold text-blue-100">Turnaround Details</h3>
             <p className="text-lg font-bold">{projectInfo.name}</p>
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="w-4 h-4" />
