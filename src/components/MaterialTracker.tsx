@@ -4,11 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
-export const MaterialTracker = () => {
+interface MaterialTrackerProps {
+  data?: any[];
+}
+
+export const MaterialTracker: React.FC<MaterialTrackerProps> = ({ data }) => {
   const taStartDate = new Date('2025-11-01');
   const currentDate = new Date();
   
-  const materials = [
+  const defaultMaterials = [
     { name: 'Heat Exchanger Tubes', processStart: '2025-02-10', leadTime: 180, status: 'on-track' },
     { name: 'Catalyst Material', processStart: '2025-01-15', leadTime: 200, status: 'delayed' },
     { name: 'Valve Assemblies', processStart: '2025-03-01', leadTime: 150, status: 'on-track' },
@@ -21,11 +25,19 @@ export const MaterialTracker = () => {
     { name: 'Structural Steel', processStart: '2025-03-10', leadTime: 130, status: 'on-track' }
   ];
 
+  const materials = data && data.length > 0 ? data.map((item: any) => ({
+    name: item.Material_Name,
+    processStart: item.Initiation_Date, // Assuming format 'DD/MM/YYYY'
+    leadTime: item.Lead_Time_Days,
+    status: item.Status.toLowerCase().replace(' ', '-'), // 'on-track', 'at-risk' -> 'delayed', 'complete' -> 'ahead'
+  })) : defaultMaterials;
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ahead': return 'bg-green-500';
       case 'on-track': return 'bg-blue-500';
       case 'delayed': return 'bg-red-500';
+      case 'at-risk': return 'bg-orange-500'; // Added for 'At Risk' status from Excel
       default: return 'bg-gray-500';
     }
   };
@@ -34,13 +46,19 @@ export const MaterialTracker = () => {
     const variants: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
       ahead: "default",
       'on-track': "secondary", 
-      delayed: "destructive"
+      delayed: "destructive",
+      'at-risk': "destructive" // Map 'at-risk' to destructive
     };
     return variants[status] || "outline";
   };
 
+  const parseDateString = (dateString: string) => {
+    const [day, month, year] = dateString.split('/').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   const calculateProgress = (processStart: string, leadTime: number) => {
-    const startDate = new Date(processStart);
+    const startDate = parseDateString(processStart);
     const endDate = new Date(startDate.getTime() + leadTime * 24 * 60 * 60 * 1000);
     const totalDuration = endDate.getTime() - startDate.getTime();
     const elapsed = currentDate.getTime() - startDate.getTime();
@@ -51,13 +69,13 @@ export const MaterialTracker = () => {
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="text-xl font-bold text-gray-900">Material Sourcing Tracker</CardTitle>
-        <p className="text-sm text-gray-600">TA Start: 01/11/2025</p>
+        <p className="text-sm text-gray-600">TA Start: {taStartDate.toLocaleDateString()}</p>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {materials.map((material, index) => {
             const progress = calculateProgress(material.processStart, material.leadTime);
-            const processStartDate = new Date(material.processStart);
+            const processStartDate = parseDateString(material.processStart);
             const completionDate = new Date(processStartDate.getTime() + material.leadTime * 24 * 60 * 60 * 1000);
             const isBeforeTAStart = completionDate < taStartDate;
             
