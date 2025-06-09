@@ -5,7 +5,7 @@ import { Upload, Download, Database, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui/badge';
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 
 export const ExcelHandler = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +55,18 @@ export const ExcelHandler = () => {
   };
 
   const handleExport = () => {
+    console.log('Export data:', data);
+    
+    // Check if data exists and has content
+    if (!data || Object.keys(data).length === 0) {
+      toast({
+        title: "No Data Available",
+        description: "No data found to export. Please ensure data is loaded from the database.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Use current Supabase data for export
     const workbook = XLSX.utils.book_new();
     
@@ -71,11 +83,27 @@ export const ExcelHandler = () => {
       'Deliverables Status'
     ];
 
+    let hasData = false;
     sheetNames.forEach(sheetName => {
       const sheetData = data[sheetName] || [];
+      console.log(`${sheetName} sheet data:`, sheetData);
+      
+      if (sheetData.length > 0) {
+        hasData = true;
+      }
+      
       const ws = XLSX.utils.json_to_sheet(sheetData);
       XLSX.utils.book_append_sheet(workbook, ws, sheetName);
     });
+
+    if (!hasData) {
+      toast({
+        title: "No Data to Export",
+        description: "All tables are empty. Please add some data first.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Export the file
     XLSX.writeFile(workbook, 'turnaround_dashboard_live_data.xlsx');

@@ -13,7 +13,7 @@ import { MaterialTracker } from '@/components/MaterialTracker';
 import { ServicesTracker } from '@/components/ServicesTracker';
 import { ExcelHandler } from '@/components/ExcelHandler';
 import { useToast } from '@/hooks/use-toast';
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 
 const Index = () => {
   const [comments, setComments] = useState('');
@@ -46,8 +46,8 @@ const Index = () => {
           <div className="text-2xl font-bold text-gray-900 mb-2">Loading Dashboard...</div>
           <div className="text-gray-600">Fetching live data from Supabase</div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   return (
