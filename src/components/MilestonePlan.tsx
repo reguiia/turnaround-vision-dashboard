@@ -5,10 +5,15 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
-export const MilestonePlan = () => {
+interface MilestonePlanProps {
+  phasesData?: any[];
+  deliverablesData?: any[];
+}
+
+export const MilestonePlan: React.FC<MilestonePlanProps> = ({ phasesData, deliverablesData }) => {
   const [selectedPhase, setSelectedPhase] = useState<number | null>(null);
 
-  const phases = [
+  const defaultPhases = [
     {
       id: 1,
       name: "Phase 1",
@@ -101,6 +106,18 @@ export const MilestonePlan = () => {
     }
   ];
 
+  const phases = phasesData && phasesData.length > 0 ? phasesData.map((p: any, index: number) => ({
+    id: index + 1,
+    name: p.Phase,
+    title: p.Milestone,
+    progress: p.Progress,
+    status: p.Status.toLowerCase().includes('complete') ? 'completed' : (p.Status.toLowerCase().includes('progress') ? 'active' : 'upcoming'),
+    dueDate: p.Due_Date,
+    deliverables: deliverablesData 
+      ? deliverablesData.filter((d: any) => d.Phase === p.Phase).map((d: any) => d.Deliverable)
+      : []
+  })) : defaultPhases;
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
@@ -122,6 +139,20 @@ export const MilestonePlan = () => {
         return 'bg-gray-300';
     }
   };
+
+  const getDeliverableProgress = (deliverableName: string, phaseName: string) => {
+    const deliverable = deliverablesData?.find(d => d.Deliverable === deliverableName && d.Phase === phaseName);
+    return deliverable ? deliverable.Progress : Math.random() * 100; // Fallback to random if not found
+  };
+
+  const getDeliverableStatus = (deliverableName: string, phaseName: string) => {
+    const deliverable = deliverablesData?.find(d => d.Deliverable === deliverableName && d.Phase === phaseName);
+    if (deliverable) {
+      return deliverable.Status.toLowerCase().includes('complete') ? "default" : "secondary";
+    }
+    return Math.random() > 0.7 ? "default" : "secondary"; // Fallback to random
+  };
+
 
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
@@ -173,11 +204,11 @@ export const MilestonePlan = () => {
                     <div className="w-full">
                       <p className="text-sm">{deliverable}</p>
                       <div className="mt-2">
-                        <Progress value={Math.random() * 100} className="h-1" />
+                        <Progress value={getDeliverableProgress(deliverable, phases.find(p => p.id === selectedPhase)?.name || '')} className="h-1" />
                       </div>
                     </div>
-                    <Badge variant={Math.random() > 0.7 ? "default" : "secondary"} className="text-xs">
-                      {Math.random() > 0.7 ? "Complete" : "In Progress"}
+                    <Badge variant={getDeliverableStatus(deliverable, phases.find(p => p.id === selectedPhase)?.name || '')} className="text-xs">
+                      {getDeliverableStatus(deliverable, phases.find(p => p.id === selectedPhase)?.name || '') === "default" ? "Complete" : "In Progress"}
                     </Badge>
                   </div>
                 ))}
