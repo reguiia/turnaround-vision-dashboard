@@ -2,15 +2,35 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 
 export const TopRisks = () => {
-  const risks = [
-    { id: 1, name: "Material Delivery Delays", probability: 70, impact: 85, score: 59.5 },
-    { id: 2, name: "Weather Conditions", probability: 60, impact: 65, score: 39 },
-    { id: 3, name: "Resource Availability", probability: 45, impact: 90, score: 40.5 },
-    { id: 4, name: "Equipment Failure", probability: 30, impact: 95, score: 28.5 },
-    { id: 5, name: "Permit Delays", probability: 55, impact: 70, score: 38.5 }
-  ];
+  const { data, loading } = useSupabaseData();
+
+  if (loading) {
+    return (
+      <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm h-[500px]">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xl font-bold text-gray-900">Top 5 Risks</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-center h-[240px]">
+            <div className="text-center">Loading...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const risksData = data['Risks'] || [];
+  
+  const risks = risksData.slice(0, 5).map((item, index) => ({
+    id: index + 1,
+    name: item.risk_name,
+    probability: item.probability,
+    impact: item.impact,
+    score: item.risk_score
+  }));
 
   const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6'];
 
@@ -75,7 +95,6 @@ export const TopRisks = () => {
                 style={{ backgroundColor: colors[index] }}
               ></div>
               <span className="flex-1 text-xs">{risk.name}</span>
-              
             </div>
           ))}
         </div>

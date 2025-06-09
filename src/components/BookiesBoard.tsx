@@ -2,35 +2,33 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from 'recharts';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 
 export const BookiesBoard = () => {
-  const data = [
-    {
-      area: 'Material',
-      target: 90,
-      measured: 75,
-    },
-    {
-      area: 'Resources',
-      target: 85,
-      measured: 80,
-    },
-    {
-      area: 'Field Support Services',
-      target: 80,
-      measured: 70,
-    },
-    {
-      area: 'Workpack',
-      target: 95,
-      measured: 85,
-    },
-    {
-      area: 'Schedule Preparation',
-      target: 88,
-      measured: 92,
-    },
-  ];
+  const { data, loading } = useSupabaseData();
+
+  if (loading) {
+    return (
+      <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm h-[500px]">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold text-gray-900">Bookies Board Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[350px]">
+            <div className="text-center">Loading...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const bookiesData = data['Bookies Data'] || [];
+  
+  const chartData = bookiesData.map(item => ({
+    area: item.area,
+    target: item.target,
+    measured: item.actual
+  }));
 
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm h-[500px]">
@@ -39,7 +37,7 @@ export const BookiesBoard = () => {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
-          <RadarChart data={data}>
+          <RadarChart data={chartData}>
             <PolarGrid gridType="polygon" />
             <PolarAngleAxis 
               dataKey="area" 

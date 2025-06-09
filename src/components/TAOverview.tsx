@@ -3,17 +3,40 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, MapPin, DollarSign, Clock } from 'lucide-react';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 
 export const TAOverview = () => {
+  const { data, loading } = useSupabaseData();
+  
+  if (loading) {
+    return (
+      <Card className="shadow-lg border-0 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Turnaround Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">Loading...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const generalInfo = data['General Info'] || [];
+  
+  const getInfoValue = (field: string) => {
+    const item = generalInfo.find(item => item.field === field);
+    return item?.value || 'N/A';
+  };
+
   const projectInfo = {
-    name: "Miskar Turnaround 2025",
-    location: "Miskar Platform, Hannibal Plant",
-    duration: "12 days",
-    startDate: "01/11/2025",
-    endDate: "12/11/2025",
-    budget: "$1.5M",
-    mainDrivers: ["Miskar DCS Upgrade", "HBG-2030 Mechanical cleaning", "Leftover MOCs from TA24"],
-    status: "Phase 2 - Detailed Planning"
+    name: getInfoValue('TA Name'),
+    location: getInfoValue('Location'),
+    duration: getInfoValue('Duration'),
+    startDate: getInfoValue('Start Date'),
+    endDate: getInfoValue('End Date'),
+    budget: getInfoValue('Budget'),
+    mainDrivers: getInfoValue('Main Drivers').split(', '),
+    status: getInfoValue('Status')
   };
 
   return (

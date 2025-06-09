@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Download, Upload, Printer } from 'lucide-react';
+import { FileText, Download, Printer } from 'lucide-react';
 import { TAOverview } from '@/components/TAOverview';
 import { MilestonePlan } from '@/components/MilestonePlan';
 import { BookiesBoard } from '@/components/BookiesBoard';
@@ -13,10 +13,12 @@ import { MaterialTracker } from '@/components/MaterialTracker';
 import { ServicesTracker } from '@/components/ServicesTracker';
 import { ExcelHandler } from '@/components/ExcelHandler';
 import { useToast } from '@/hooks/use-toast';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 
 const Index = () => {
   const [comments, setComments] = useState('');
   const { toast } = useToast();
+  const { loading } = useSupabaseData();
 
   const handleExportCSV = () => {
     const csvContent = `Comments,Timestamp\n"${comments}","${new Date().toISOString()}"`;
@@ -37,6 +39,17 @@ const Index = () => {
     window.print();
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-2xl font-bold text-gray-900 mb-2">Loading Dashboard...</div>
+          <div className="text-gray-600">Fetching live data from Supabase</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-4">
       <div className="max-w-[1600px] mx-auto space-y-6">
@@ -44,7 +57,7 @@ const Index = () => {
         <div className="flex justify-between items-center print:hidden">
           <div>
             <h1 className="text-4xl font-bold text-gray-900">Turnaround Management Dashboard</h1>
-            <p className="text-lg text-gray-600">Driven by Precision, Powered by Teamwork...</p>
+            <p className="text-lg text-gray-600">Driven by Precision, Powered by Teamwork... <span className="text-green-600 font-semibold">Live Data from Supabase</span></p>
           </div>
           <div className="flex gap-3">
             <ExcelHandler />
@@ -71,10 +84,7 @@ const Index = () => {
           </div>
 
           {/* Bookies Board and Top Risks */}
-          <div className="col-span-5">
-            <BookiesBoard />
-          </div>
-          <div className="col-span-7">
+          <div className="col-span-6">
             <BookiesBoard />
           </div>
           <div className="col-span-6">
