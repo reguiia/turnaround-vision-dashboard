@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -124,69 +124,70 @@ export const useSupabaseData = () => {
     }
   };
 
-  useEffect(() => {
-    // Fetch initial data
-    fetchAllData();
+  // 👇 Use ref to track whether we've already subscribed
+  const hasSubscribed = useRef(false);
 
-    // Set up realtime subscription
+  useEffect(() => {
+    if (hasSubscribed.current) return;
+
     const channel = supabase.channel('dashboard-changes');
 
-    // Set up all listeners
     channel
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'general_info' },
-        () => fetchAllData()
+        fetchAllData
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'bookies_data' },
-        () => fetchAllData()
+        fetchAllData
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'risks' },
-        () => fetchAllData()
+        fetchAllData
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'milestones' },
-        () => fetchAllData()
+        fetchAllData
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'action_log' },
-        () => fetchAllData()
+        fetchAllData
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'material_procurement' },
-        () => fetchAllData()
+        fetchAllData
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'service_procurement' },
-        () => fetchAllData()
+        fetchAllData
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'comments_notes' },
-        () => fetchAllData()
+        fetchAllData
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'deliverables_status' },
-        () => fetchAllData()
+        fetchAllData
       );
 
-    // Subscribe to the channel
+    fetchAllData();
     channel.subscribe();
+    hasSubscribed.current = true;
 
-    // Cleanup function
     return () => {
       supabase.removeChannel(channel);
+      hasSubscribed.current = false;
     };
-  }, []); // Remove fetchAllData from dependencies
+  }, [fetchAllData]);
 
   return {
     data,
