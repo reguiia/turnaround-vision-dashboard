@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,9 @@ import { useToast } from '@/hooks/use-toast';
 const Index = () => {
   const [comments, setComments] = useState('');
   const { toast } = useToast();
+
+  // State for imported data
+  const [importedDashboardData, setImportedDashboardData] = useState<any>(null);
 
   const handleExportCSV = () => {
     const csvContent = `Comments,Timestamp\n"${comments}","${new Date().toISOString()}"`;
@@ -47,7 +49,7 @@ const Index = () => {
             <p className="text-lg text-gray-600">Driven by Precision, Powered by Teamwork...</p>
           </div>
           <div className="flex gap-3">
-            <ExcelHandler />
+            <ExcelHandler onImportSuccess={setImportedDashboardData} />
             <Button 
               onClick={handlePrint}
               className="bg-gray-800 hover:bg-gray-900"
@@ -62,36 +64,40 @@ const Index = () => {
         <div className="grid grid-cols-12 gap-6 print:gap-4">
           {/* TA Overview - Full width */}
           <div className="col-span-12">
-            <TAOverview />
+            <TAOverview data={importedDashboardData?.['General Info']} />
           </div>
 
           {/* Milestone Plan - Full width */}
           <div className="col-span-12">
-            <MilestonePlan />
+            <MilestonePlan 
+              phasesData={importedDashboardData?.['Milestones + Deliverables']}
+              deliverablesData={importedDashboardData?.['Deliverables Status']}
+            />
           </div>
 
           {/* Bookies Board and Top Risks */}
           <div className="col-span-5">
-            <BookiesBoard />
+            <BookiesBoard data={importedDashboardData?.['Bookies Data']} />
           </div>
           <div className="col-span-7">
-            <BookiesBoard />
+            {/* Assuming this is another BookiesBoard or a different component meant to be here */}
+            <BookiesBoard data={importedDashboardData?.['Bookies Data']} />
           </div>
           <div className="col-span-6">
-            <TopRisks />
+            <TopRisks data={importedDashboardData?.['Risks']} />
           </div>
 
           {/* Action Log Status  */}
           <div className="col-span-6">
-            <ActionLogStatus />
+            <ActionLogStatus data={importedDashboardData?.['Action Log']} />
           </div>
 
           {/* Material and Services Trackers */}
           <div className="col-span-6">
-            <MaterialTracker />
+            <MaterialTracker data={importedDashboardData?.['Material Procurement']} />
           </div>
           <div className="col-span-6">
-            <ServicesTracker />
+            <ServicesTracker data={importedDashboardData?.['Service Procurement']} />
           </div>
 
           {/* Comments Section */}
