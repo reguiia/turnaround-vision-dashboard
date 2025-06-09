@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -124,22 +125,68 @@ export const useSupabaseData = () => {
   };
 
   useEffect(() => {
+    let isSubscribed = true;
+    const channel = supabase.channel('dashboard-changes');
+
+    // Set up all listeners
+    channel
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'general_info' },
+        fetchAllData
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bookies_data' },
+        fetchAllData
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'risks' },
+        fetchAllData
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'milestones' },
+        fetchAllData
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'action_log' },
+        fetchAllData
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'material_procurement' },
+        fetchAllData
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'service_procurement' },
+        fetchAllData
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments_notes' },
+        fetchAllData
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'deliverables_status' },
+        fetchAllData
+      );
+
+    // Fetch initial data
     fetchAllData();
 
-    const channel = supabase
-      .channel('dashboard-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'general_info' }, fetchAllData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookies_data' }, fetchAllData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'risks' }, fetchAllData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'milestones' }, fetchAllData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'action_log' }, fetchAllData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'material_procurement' }, fetchAllData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'service_procurement' }, fetchAllData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments_notes' }, fetchAllData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'deliverables_status' }, fetchAllData)
-      .subscribe();
+    // Subscribe once
+    if (isSubscribed) {
+      channel.subscribe();
+    }
 
+    // Cleanup function
     return () => {
+      isSubscribed = false;
       supabase.removeChannel(channel);
     };
   }, [fetchAllData]);
