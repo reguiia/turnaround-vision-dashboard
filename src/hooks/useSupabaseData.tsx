@@ -125,7 +125,10 @@ export const useSupabaseData = () => {
   };
 
   useEffect(() => {
-    let isSubscribed = true;
+    // Fetch initial data
+    fetchAllData();
+
+    // Set up realtime subscription
     const channel = supabase.channel('dashboard-changes');
 
     // Set up all listeners
@@ -133,63 +136,57 @@ export const useSupabaseData = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'general_info' },
-        fetchAllData
+        () => fetchAllData()
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'bookies_data' },
-        fetchAllData
+        () => fetchAllData()
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'risks' },
-        fetchAllData
+        () => fetchAllData()
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'milestones' },
-        fetchAllData
+        () => fetchAllData()
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'action_log' },
-        fetchAllData
+        () => fetchAllData()
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'material_procurement' },
-        fetchAllData
+        () => fetchAllData()
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'service_procurement' },
-        fetchAllData
+        () => fetchAllData()
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'comments_notes' },
-        fetchAllData
+        () => fetchAllData()
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'deliverables_status' },
-        fetchAllData
+        () => fetchAllData()
       );
 
-    // Fetch initial data
-    fetchAllData();
-
-    // Subscribe once
-    if (isSubscribed) {
-      channel.subscribe();
-    }
+    // Subscribe to the channel
+    channel.subscribe();
 
     // Cleanup function
     return () => {
-      isSubscribed = false;
       supabase.removeChannel(channel);
     };
-  }, [fetchAllData]);
+  }, []); // Remove fetchAllData from dependencies
 
   return {
     data,
