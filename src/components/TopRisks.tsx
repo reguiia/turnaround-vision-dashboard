@@ -3,26 +3,14 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-interface TopRisksProps {
-  data?: any[];
-}
-
-export const TopRisks: React.FC<TopRisksProps> = ({ data }) => {
-  const defaultRisks = [
+export const TopRisks = () => {
+  const risks = [
     { id: 1, name: "Material Delivery Delays", probability: 70, impact: 85, score: 59.5 },
     { id: 2, name: "Weather Conditions", probability: 60, impact: 65, score: 39 },
     { id: 3, name: "Resource Availability", probability: 45, impact: 90, score: 40.5 },
     { id: 4, name: "Equipment Failure", probability: 30, impact: 95, score: 28.5 },
     { id: 5, name: "Permit Delays", probability: 55, impact: 70, score: 38.5 }
   ];
-
-  const risks = data && data.length > 0 ? data.map((item: any) => ({
-    id: item.Risk_ID,
-    name: item.Risk_Name,
-    probability: item.Probability,
-    impact: item.Impact,
-    score: item.Risk_Score,
-  })).slice(0, 5) : defaultRisks; // Take top 5 risks if more are imported
 
   const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6'];
 
@@ -71,7 +59,7 @@ export const TopRisks: React.FC<TopRisksProps> = ({ data }) => {
               />
               <Scatter name="Risks" data={risks}>
                 {risks.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                  <Cell key={`cell-${index}`} fill={colors[index]} />
                 ))}
               </Scatter>
             </ScatterChart>
@@ -84,7 +72,7 @@ export const TopRisks: React.FC<TopRisksProps> = ({ data }) => {
             <div key={risk.id} className="flex items-center gap-3 text-sm py-1">
               <div 
                 className="w-4 h-4 rounded-full flex-shrink-0" 
-                style={{ backgroundColor: colors[index % colors.length] }}
+                style={{ backgroundColor: colors[index] }}
               ></div>
               <span className="flex-1 text-xs">{risk.name}</span>
               

@@ -3,12 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from 'recharts';
 
-interface BookiesBoardProps {
-  data?: any[];
-}
-
-export const BookiesBoard: React.FC<BookiesBoardProps> = ({ data }) => {
-  const defaultData = [
+export const BookiesBoard = () => {
+  const data = [
     {
       area: 'Material',
       target: 90,
@@ -36,12 +32,6 @@ export const BookiesBoard: React.FC<BookiesBoardProps> = ({ data }) => {
     },
   ];
 
-  const chartData = data && data.length > 0 ? data.map((item: any) => ({
-    area: item.Area,
-    target: item.Target,
-    measured: item.Actual,
-  })) : defaultData;
-
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm h-[500px]">
       <CardHeader>
@@ -49,7 +39,7 @@ export const BookiesBoard: React.FC<BookiesBoardProps> = ({ data }) => {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
-          <RadarChart data={chartData}>
+          <RadarChart data={data}>
             <PolarGrid gridType="polygon" />
             <PolarAngleAxis 
               dataKey="area" 

@@ -6,14 +6,10 @@ import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui/badge';
 
-interface ExcelHandlerProps {
-  onImportSuccess: (data: any) => void;
-}
-
-export const ExcelHandler: React.FC<ExcelHandlerProps> = ({ onImportSuccess }) => {
+export const ExcelHandler = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const [importedData, setImportedData] = useState<any>(null); // Keep this local state to manage badge
+  const [importedData, setImportedData] = useState<any>(null);
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -39,9 +35,8 @@ export const ExcelHandler: React.FC<ExcelHandlerProps> = ({ onImportSuccess }) =
           console.log(`${sheetName} data:`, jsonData);
         });
 
-        // Store the imported data in local state for badge, and pass to parent
+        // Store the imported data in state
         setImportedData(processedData);
-        onImportSuccess(processedData); // Pass data to the parent component
 
         toast({
           title: "Import Successful",
@@ -206,8 +201,7 @@ export const ExcelHandler: React.FC<ExcelHandlerProps> = ({ onImportSuccess }) =
   };
 
   const clearImportedData = () => {
-    setImportedData(null); // Clear local state
-    onImportSuccess(null); // Clear parent state
+    setImportedData(null);
     toast({
       title: "Data Cleared",
       description: "Imported data has been cleared. Export will now use default data."
