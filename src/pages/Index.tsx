@@ -39,7 +39,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
+    <div className="min-h-screen p-4">
       <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Header with Controls */}
         <div className="flex justify-between items-center print:hidden">
