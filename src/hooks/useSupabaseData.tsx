@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +10,9 @@ export const useSupabaseData = () => {
   const [data, setData] = useState<SupabaseTableData>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  
+  // Store the channel reference to ensure we can properly clean it up
+  const channelRef = useRef<any>(null);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -124,13 +126,16 @@ export const useSupabaseData = () => {
     }
   };
 
-  // 👇 Use ref to track whether we've already subscribed
-  const hasSubscribed = useRef(false);
-
   useEffect(() => {
-    if (hasSubscribed.current) return;
+    // Clean up any existing channel first
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
-    const channel = supabase.channel('dashboard-changes');
+    // Create a new channel with a unique name to avoid conflicts
+    const channelName = `dashboard-changes-${Date.now()}-${Math.random()}`;
+    const channel = supabase.channel(channelName);
 
     channel
       .on(
@@ -179,13 +184,21 @@ export const useSupabaseData = () => {
         fetchAllData
       );
 
-    fetchAllData();
-    channel.subscribe();
-    hasSubscribed.current = true;
+    // Store the channel reference
+    channelRef.current = channel;
 
+    // Subscribe to the channel
+    channel.subscribe();
+
+    // Initial data fetch
+    fetchAllData();
+
+    // Cleanup function
     return () => {
-      supabase.removeChannel(channel);
-      hasSubscribed.current = false;
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [fetchAllData]);
 
