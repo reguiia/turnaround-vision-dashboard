@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Database } from '@/types';
 
 export interface SupabaseTableData {
   [key: string]: any[];
@@ -64,93 +63,146 @@ export const useSupabaseData = () => {
 
   const importDataToSupabase = async (importedData: any) => {
     try {
-      const operations: any[] = [];
+      const operations: Promise<any>[] = [];
 
-      // Define expected sheet names and their corresponding table mappings
-      const tableMappings: { [key: string]: { table: string; onConflict: string; fields: string[] } } = {
-        'General Info': {
-          table: 'general_info',
-          onConflict: 'field',
-          fields: ['field', 'value'],
-        },
-        'Bookies Data': {
-          table: 'bookies_data',
-          onConflict: 'id',
-          fields: ['area', 'target', 'actual'],
-        },
-        'Risks': {
-          table: 'risks',
-          onConflict: 'risk_id',
-          fields: ['risk_id', 'risk_name', 'probability', 'impact', 'risk_score', 'mitigation'],
-        },
-        'Milestones + Deliverables': {
-          table: 'milestones',
-          onConflict: 'id',
-          fields: ['milestone', 'phase', 'due_date', 'status', 'progress'],
-        },
-        'Action Log': {
-          table: 'action_log',
-          onConflict: 'action_id',
-          fields: ['action_id', 'description', 'owner', 'due_date', 'status', 'source'],
-        },
-        'Material Procurement': {
-          table: 'material_procurement',
-          onConflict: 'material_id',
-          fields: ['material_id', 'material_name', 'supplier', 'initiation_date', 'required_date', 'lead_time_days', 'status'],
-        },
-        'Service Procurement': {
-          table: 'service_procurement',
-          onConflict: 'service_id',
-          fields: ['service_id', 'service_name', 'provider', 'initiation_date', 'required_date', 'lead_time_days', 'status'],
-        },
-        'Comments-Notes': {
-          table: 'comments_notes',
-          onConflict: 'id',
-          fields: ['comment', 'author', 'category', 'date'],
-        },
-        'Deliverables Status': {
-          table: 'deliverables_status',
-          onConflict: 'id',
-          fields: ['deliverable', 'phase', 'owner', 'due_date', 'status', 'progress'],
-        },
+      // Helper function to process each table
+      const processTable = (tableName: string, data: any[], idField: string, transformFn: (item: any) => any) => {
+        if (!data || data.length === 0) return;
+        
+        // First delete all existing records except dummy record
+        operations.push(
+          supabase.from(tableName).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+        );
+        
+        // Then upsert all new records
+        operations.push(
+          supabase.from(tableName).upsert(
+            data.map(item => transformFn(item)),
+            { onConflict: idField }
+          )
+        );
       };
 
-      // Validate and process each sheet
-      for (const [sheetName, mapping] of Object.entries(tableMappings)) {
-        if (importedData[sheetName]) {
-          const rows = importedData[sheetName];
-          const operationsForTable = rows.map((item: any) => {
-            // Map Excel column names to database fields, handling case variations
-            const upsertData: { [key: string]: any } = {};
-            mapping.fields.forEach((field) => {
-              const fieldVariations = [
-                field,
-                field.charAt(0).toUpperCase() + field.slice(1), // PascalCase
-                field.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()), // camelCase
-              ];
-              for (const variation of fieldVariations) {
-                if (item[variation] !== undefined) {
-                  upsertData[field] = item[variation];
-                  break;
-                }
-              }
-            });
+      // Process each table
+      processTable(
+        'general_info',
+        importedData['General Info'] || [],
+        'field',
+        (item) => ({
+          field: item.Field || item.field,
+          value: item.Value || item.value,
+        })
+      );
 
-            // Ensure all required fields are present
-            const missingFields = mapping.fields.filter((field) => upsertData[field] === undefined);
-            if (missingFields.length > 0) {
-              throw new Error(`Missing required fields in ${sheetName}: ${missingFields.join(', ')}`);
-            }
+      processTable(
+        'bookies_data',
+        importedData['Bookies Data'] || [],
+        'id',
+        (item) => ({
+          area: item.Area || item.area,
+          target: item.Target || item.target,
+          actual: item.Actual || item.actual,
+        })
+      );
 
-            return supabase
-              .from(mapping.table)
-              .upsert(upsertData, { onConflict: mapping.onConflict });
-          });
+      processTable(
+        'risks',
+        importedData['Risks'] || [],
+        'risk_id',
+        (item) => ({
+          risk_id: item.Risk_ID || item.risk_id,
+          risk_name: item.Risk_Name || item.risk_name,
+          probability: item.Probability || item.probability,
+          impact: item.Impact || item.impact,
+          risk_score: item.Risk_Score || item.risk_score,
+          mitigation: item.Mitigation || item.mitigation || null,
+        })
+      );
 
-          operations.push(...operationsForTable);
-        }
-      }
+      processTable(
+        'milestones',
+        importedData['Milestones + Deliverables'] || [],
+        'id',
+        (item) => ({
+          milestone: item.Milestone || item.milestone,
+          phase: item.Phase || item.phase,
+          due_date: item.Due_Date || item.due_date,
+          status: item.Status || item.status,
+          progress: item.Progress || item.progress || 0,
+        })
+      );
 
+      processTable(
+        'action_log',
+        importedData['Action Log'] || [],
+        'action_id',
+        (item) => ({
+          action_id: item.Action_ID || item.action_id,
+          description: item.Description || item.description,
+          owner: item.Owner || item.owner,
+          due_date: item.Due_Date || item.due_date,
+          status: item.Status || item.status,
+          source: item.Source || item.source,
+        })
+      );
+
+      processTable(
+        'material_procurement',
+        importedData['Material Procurement'] || [],
+        'material_id',
+        (item) => ({
+          material_id: item.Material_ID || item.material_id,
+          material_name: item.Material_Name || item.material_name,
+          supplier: item.Supplier || item.supplier,
+          initiation_date: item.Initiation_Date || item.initiation_date,
+          required_date: item.Required_Date || item.required_date,
+          lead_time_days: item.Lead_Time_Days || item.lead_time_days,
+          status: item.Status || item.status,
+        })
+      );
+
+      processTable(
+        'service_procurement',
+        importedData['Service Procurement'] || [],
+        'service_id',
+        (item) => ({
+          service_id: item.Service_ID || item.service_id,
+          service_name: item.Service_Name || item.service_name,
+          provider: item.Provider || item.provider,
+          initiation_date: item.Initiation_Date || item.initiation_date,
+          required_date: item.Required_Date || item.required_date,
+          lead_time_days: item.Lead_Time_Days || item.lead_time_days,
+          status: item.Status || item.status,
+        })
+      );
+
+      processTable(
+        'comments_notes',
+        importedData['Comments-Notes'] || [],
+        'id',
+        (item) => ({
+          comment: item.Comment || item.comment,
+          author: item.Author || item.author,
+          category: item.Category || item.category,
+          date: item.Date || item.date,
+        })
+      );
+
+      processTable(
+        'deliverables_status',
+        importedData['Deliverables Status'] || [],
+        'id',
+        (item) => ({
+          deliverable: item.Deliverable || item.deliverable,
+          phase: item.Phase || item.phase,
+          owner: item.Owner || item.owner,
+          due_date: item.Due_Date || item.due_date,
+          status: item.Status || item.status,
+          progress: item.Progress || item.progress || 0,
+        })
+      );
+
+      // Execute all operations
       await Promise.all(operations);
 
       toast({
@@ -158,26 +210,24 @@ export const useSupabaseData = () => {
         description: 'Data has been imported to the database successfully',
       });
 
-      await fetchAllData(); // Refresh data to update dashboard graphs
+      fetchAllData(); // Refresh after import
     } catch (error) {
       console.error('Error importing data:', error);
       toast({
         title: 'Import Failed',
-        description: `Failed to import data to database: ${error.message || 'Unknown error'}`,
+        description: 'Failed to import data to database',
         variant: 'destructive',
       });
     }
   };
 
   useEffect(() => {
-    // Clean up any existing channel
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
     }
 
-    // Use a static channel name to avoid multiple subscriptions
-    const channel = supabase.channel('dashboard-changes');
+    const channelName = `dashboard-changes-${Date.now()}-${Math.random()}`;
+    const channel = supabase.channel(channelName);
 
     channel
       .on('postgres_changes', { event: '*', schema: 'public', table: 'general_info' }, fetchAllData)
@@ -193,13 +243,11 @@ export const useSupabaseData = () => {
     channelRef.current = channel;
     channel.subscribe();
 
-    // Initial data fetch
     fetchAllData();
 
     return () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
       }
     };
   }, [fetchAllData]);
