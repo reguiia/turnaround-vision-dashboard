@@ -74,6 +74,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
     try {
       const operations: any[] = [];
 
+      // Import General Info
       if (importedData['General Info']) {
         operations.push(
           supabase.from('general_info').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
@@ -86,6 +87,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         );
       }
 
+      // Import Bookies Data
       if (importedData['Bookies Data']) {
         operations.push(
           supabase.from('bookies_data').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
@@ -99,6 +101,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         );
       }
 
+      // Import Risks
       if (importedData['Risks']) {
         operations.push(
           supabase.from('risks').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
@@ -115,11 +118,112 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         );
       }
 
+      // Import Milestones + Deliverables
+      if (importedData['Milestones + Deliverables']) {
+        operations.push(
+          supabase.from('milestones').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+          ...importedData['Milestones + Deliverables'].map((item: any) =>
+            supabase.from('milestones').insert({
+              milestone: item.Milestone || item.milestone,
+              phase: item.Phase || item.phase,
+              due_date: item.Due_Date || item.due_date,
+              status: item.Status || item.status,
+              progress: item.Progress || item.progress || 0,
+            })
+          )
+        );
+      }
+
+      // Import Action Log
+      if (importedData['Action Log']) {
+        operations.push(
+          supabase.from('action_log').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+          ...importedData['Action Log'].map((item: any) =>
+            supabase.from('action_log').insert({
+              action_id: item.Action_ID || item.action_id,
+              description: item.Description || item.description,
+              owner: item.Owner || item.owner,
+              due_date: item.Due_Date || item.due_date,
+              status: item.Status || item.status,
+              source: item.Source || item.source,
+            })
+          )
+        );
+      }
+
+      // Import Material Procurement
+      if (importedData['Material Procurement']) {
+        operations.push(
+          supabase.from('material_procurement').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+          ...importedData['Material Procurement'].map((item: any) =>
+            supabase.from('material_procurement').insert({
+              material_id: item.Material_ID || item.material_id,
+              material_name: item.Material_Name || item.material_name,
+              supplier: item.Supplier || item.supplier,
+              initiation_date: item.Initiation_Date || item.initiation_date,
+              required_date: item.Required_Date || item.required_date,
+              lead_time_days: item.Lead_Time_Days || item.lead_time_days,
+              status: item.Status || item.status,
+            })
+          )
+        );
+      }
+
+      // Import Service Procurement
+      if (importedData['Service Procurement']) {
+        operations.push(
+          supabase.from('service_procurement').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+          ...importedData['Service Procurement'].map((item: any) =>
+            supabase.from('service_procurement').insert({
+              service_id: item.Service_ID || item.service_id,
+              service_name: item.Service_Name || item.service_name,
+              provider: item.Provider || item.provider,
+              initiation_date: item.Initiation_Date || item.initiation_date,
+              required_date: item.Required_Date || item.required_date,
+              lead_time_days: item.Lead_Time_Days || item.lead_time_days,
+              status: item.Status || item.status,
+            })
+          )
+        );
+      }
+
+      // Import Comments-Notes
+      if (importedData['Comments-Notes']) {
+        operations.push(
+          supabase.from('comments_notes').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+          ...importedData['Comments-Notes'].map((item: any) =>
+            supabase.from('comments_notes').insert({
+              comment: item.Comment || item.comment,
+              author: item.Author || item.author,
+              category: item.Category || item.category,
+              date: item.Date || item.date,
+            })
+          )
+        );
+      }
+
+      // Import Deliverables Status
+      if (importedData['Deliverables Status']) {
+        operations.push(
+          supabase.from('deliverables_status').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+          ...importedData['Deliverables Status'].map((item: any) =>
+            supabase.from('deliverables_status').insert({
+              deliverable: item.Deliverable || item.deliverable,
+              phase: item.Phase || item.phase,
+              owner: item.Owner || item.owner,
+              due_date: item.Due_Date || item.due_date,
+              status: item.Status || item.status,
+              progress: item.Progress || item.progress || 0,
+            })
+          )
+        );
+      }
+
       await Promise.all(operations);
 
       toast({
         title: 'Import Successful',
-        description: 'Data has been imported to the database successfully',
+        description: 'All data has been imported to the database successfully',
       });
 
       fetchAllData(); // Refresh after import
