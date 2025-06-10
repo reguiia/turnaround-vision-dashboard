@@ -43,7 +43,7 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-        onConflict: 'action_id'
+        onConflict: 'action_id',
         ignoreDuplicates: false,
         columns: ['action_id', 'source', 'description', 'status', 'due_date', 'owner']
       }
