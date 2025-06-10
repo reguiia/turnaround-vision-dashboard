@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+
+import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, Download, Database, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -6,85 +7,91 @@ import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui/badge';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 
-import { EXCEL_SHEET_TO_TABLE_MAP, TablesInsert } from '@/types/supabase';
-
 export const ExcelHandler = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { data, importDataToSupabase } = useSupabaseData();
 
-  const [isImporting, setIsImporting] = useState(false);
-
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setIsImporting(true);
-
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
       try {
         const data = e.target?.result;
         const workbook = XLSX.read(data, { type: 'binary' });
-
-        const processedData: Record<string, any[]> = {};
-
-        workbook.SheetNames.forEach(sheetName => {
-          const mappedTableName = EXCEL_SHEET_TO_TABLE_MAP[sheetName];
-          if (!mappedTableName) {
-            console.warn(`Sheet "${sheetName}" does not have a corresponding table in Supabase.`);
-            return;
-          }
-
+        
+        // Process each sheet
+        const sheets = workbook.SheetNames;
+        console.log('Imported sheets:', sheets);
+        
+        // Process specific sheets
+        const processedData: any = {};
+        
+        sheets.forEach(sheetName => {
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
-          processedData[mappedTableName] = jsonData as TablesInsert<typeof mappedTableName>[];
+          processedData[sheetName] = jsonData;
+          console.log(`${sheetName} data:`, jsonData);
         });
 
-        await importDataToSupabase(processedData);
+        // Import data to Supabase
+        importDataToSupabase(processedData);
 
-        toast({
-          title: "Import Successful",
-          description: "Excel data has been imported into Supabase successfully."
-        });
       } catch (error) {
         console.error('Import error:', error);
         toast({
           title: "Import Failed",
-          description: "Failed to parse or import Excel file.",
+          description: "Failed to parse Excel file. Please check the format.",
           variant: "destructive"
         });
-      } finally {
-        setIsImporting(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
       }
     };
     reader.readAsBinaryString(file);
+    
+    // Reset file input
+    event.target.value = '';
   };
 
   const handleExport = () => {
+    console.log('Export data:', data);
+    
+    // Check if data exists and has content
     if (!data || Object.keys(data).length === 0) {
       toast({
         title: "No Data Available",
-        description: "There is no data to export. Please ensure data is loaded from the database.",
+        description: "No data found to export. Please ensure data is loaded from the database.",
         variant: "destructive"
       });
       return;
     }
 
+    // Use current Supabase data for export
     const workbook = XLSX.utils.book_new();
+    
+    // Create sheets from the Supabase data
+    const sheetNames = [
+      'General Info',
+      'Bookies Data', 
+      'Risks',
+      'Milestones + Deliverables',
+      'Action Log',
+      'Material Procurement',
+      'Service Procurement',
+      'Comments-Notes',
+      'Deliverables Status'
+    ];
 
     let hasData = false;
-
-    Object.entries(EXCEL_SHEET_TO_TABLE_MAP).forEach(([sheetName, tableName]) => {
-      const sheetData = data[tableName] || [];
-
+    sheetNames.forEach(sheetName => {
+      const sheetData = data[sheetName] || [];
+      console.log(`${sheetName} sheet data:`, sheetData);
+      
       if (sheetData.length > 0) {
         hasData = true;
       }
-
+      
       const ws = XLSX.utils.json_to_sheet(sheetData);
       XLSX.utils.book_append_sheet(workbook, ws, sheetName);
     });
@@ -98,11 +105,12 @@ export const ExcelHandler = () => {
       return;
     }
 
+    // Export the file
     XLSX.writeFile(workbook, 'turnaround_dashboard_live_data.xlsx');
-
+    
     toast({
       title: "Export Successful",
-      description: "Live dashboard data exported successfully with all current data from the database."
+      description: "Live dashboard data exported successfully with all current data from database."
     });
   };
 
@@ -125,18 +133,17 @@ export const ExcelHandler = () => {
           accept=".xlsx,.xls"
           className="hidden"
         />
-
-        <Button
+        
+        <Button 
           onClick={() => fileInputRef.current?.click()}
           variant="outline"
           className="border-blue-200 hover:bg-blue-50"
-          disabled={isImporting}
         >
           <Upload className="w-4 h-4 mr-2" />
-          {isImporting ? "Importing..." : "Import to Database"}
+          Import to Database
         </Button>
-
-        <Button
+        
+        <Button 
           onClick={handleExport}
           variant="outline"
           className="border-green-200 hover:bg-green-50"
@@ -148,4 +155,3 @@ export const ExcelHandler = () => {
     </div>
   );
 };
- 
