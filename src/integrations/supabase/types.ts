@@ -334,20 +334,7 @@ export type Database = {
     }
   }
 }
-export const EXCEL_SHEET_TO_TABLE_MAP: Record<string, keyof Database['public']['Tables']> = {
-  'General Info': 'general_info',
-  'Bookies Data': 'bookies_data',
-  'Risks': 'risks',
-  'Milestones + Deliverables': 'milestones',
-  'Action Log': 'action_log',
-  'Material Procurement': 'material_procurement',
-  'Service Procurement': 'service_procurement',
-  'Comments-Notes': 'comments_notes',
-  'Deliverables Status': 'deliverables_status',
-};
 
-export type TablesInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['upsert'];
-export type TablesUpdate<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update'];
 type DefaultSchema = Database[Extract<keyof Database, "public">]
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
