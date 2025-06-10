@@ -21,7 +21,7 @@ export type Database = {
           status: string
           updated_at: string
         }
-        Insert: {
+        upsert: {
           action_id: string
           created_at?: string
           description: string
@@ -54,7 +54,7 @@ export type Database = {
           target: number
           updated_at: string
         }
-        Insert: {
+        upsert: {
           actual: number
           area: string
           created_at?: string
@@ -82,7 +82,7 @@ export type Database = {
           id: string
           updated_at: string
         }
-        Insert: {
+        upsert: {
           author: string
           category: string
           comment: string
@@ -114,7 +114,7 @@ export type Database = {
           status: string
           updated_at: string
         }
-        Insert: {
+        upsert: {
           created_at?: string
           deliverable: string
           due_date: string
@@ -146,7 +146,7 @@ export type Database = {
           updated_at: string
           value: string
         }
-        Insert: {
+        upsert: {
           created_at?: string
           field: string
           id?: string
@@ -175,7 +175,7 @@ export type Database = {
           supplier: string
           updated_at: string
         }
-        Insert: {
+        upsert: {
           created_at?: string
           id?: string
           initiation_date: string
@@ -212,7 +212,7 @@ export type Database = {
           status: string
           updated_at: string
         }
-        Insert: {
+        upsert: {
           created_at?: string
           due_date: string
           id?: string
@@ -246,7 +246,7 @@ export type Database = {
           risk_score: number
           updated_at: string
         }
-        Insert: {
+        upsert: {
           created_at?: string
           id?: string
           impact: number
@@ -283,7 +283,7 @@ export type Database = {
           status: string
           updated_at: string
         }
-        Insert: {
+        upsert: {
           created_at?: string
           id?: string
           initiation_date: string
@@ -354,7 +354,7 @@ export type Tables<
       : never
     : never
 
-export type TablesInsert<
+export type Tablesupsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
@@ -365,13 +365,13 @@ export type TablesInsert<
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
   ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      upsert: infer I
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
+        upsert: infer I
       }
       ? I
       : never
