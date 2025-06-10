@@ -43,7 +43,7 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-        onConflict: 'id'
+        onConflict: 'action_id'
       }
       bookies_data: {
         Row: {
