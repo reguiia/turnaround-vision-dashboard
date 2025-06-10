@@ -479,8 +479,17 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({
     // Fetch initial data
     fetchAllData();
 
-    // Set up realtime subscription with a static channel name
-    const channel = supabase.channel("dashboard-changes");
+    // Set up realtime subscription with a unique static channel name
+    const channelName = "dashboard-realtime-updates";
+    let channel = supabase.getChannels().find((ch) => ch.topic === channelName);
+
+    // If channel already exists, remove it first to prevent duplicates
+    if (channel) {
+      supabase.removeChannel(channel);
+    }
+
+    // Create new channel
+    channel = supabase.channel(channelName);
 
     channel
       .on(
@@ -533,9 +542,11 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Cleanup function
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
-  }, [fetchAllData]);
+  }, []); // Remove fetchAllData from dependency array to prevent re-subscriptions
 
   return (
     <SupabaseDataContext.Provider
