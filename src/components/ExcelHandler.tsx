@@ -51,8 +51,86 @@ export const ExcelHandler = () => {
     return errors;
   };
 
+  // Column name mapping for each table
+  const COLUMN_MAPPINGS: Record<string, Record<string, string>> = {
+    action_log: {
+      'Action_ID': 'action_id',
+      'action_id': 'action_id',
+      'Source': 'source',
+      'source': 'source',
+      'Description': 'description',
+      'description': 'description',
+      'Status': 'status',
+      'status': 'status',
+      'Due_Date': 'due_date',
+      'due_date': 'due_date',
+      'Owner': 'owner',
+      'owner': 'owner'
+    },
+    general_info: {
+      'Field': 'field',
+      'field': 'field',
+      'Value': 'value',
+      'value': 'value'
+    },
+    bookies_data: {
+      'Area': 'area',
+      'area': 'area',
+      'Target': 'target',
+      'target': 'target',
+      'Actual': 'actual',
+      'actual': 'actual'
+    },
+    risks: {
+      'Risk_ID': 'risk_id',
+      'risk_id': 'risk_id',
+      'Risk_Name': 'risk_name',
+      'risk_name': 'risk_name',
+      'Probability': 'probability',
+      'probability': 'probability',
+      'Impact': 'impact',
+      'impact': 'impact',
+      'Risk_Score': 'risk_score',
+      'risk_score': 'risk_score',
+      'Mitigation': 'mitigation',
+      'mitigation': 'mitigation'
+    }
+  };
+
+  // Parse DD/MM/YYYY or DD-MM-YYYY date format to YYYY-MM-DD
+  const parseDate = (dateString: string): string => {
+    if (!dateString) return '';
+    
+    // Handle different date formats
+    const dateStr = dateString.toString().trim();
+    
+    // Try DD/MM/YYYY or DD-MM-YYYY format first
+    const ddmmyyyyMatch = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (ddmmyyyyMatch) {
+      const [, day, month, year] = ddmmyyyyMatch;
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    
+    // Try YYYY-MM-DD format
+    const yyyymmddMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (yyyymmddMatch) {
+      return dateStr; // Already in correct format
+    }
+    
+    // Try to parse as regular date
+    const parsedDate = new Date(dateStr);
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate.toISOString().split('T')[0];
+    }
+    
+    console.warn(`Could not parse date: ${dateString}`);
+    return '';
+  };
+
   // Clean and transform data for database
   const transformDataForDatabase = (tableName: string, rawData: any[]): any[] => {
+    const columnMapping = COLUMN_MAPPINGS[tableName] || {};
+    
     return rawData.map((row, index) => {
       // Remove empty rows
       const hasData = Object.values(row).some(value => 
@@ -63,44 +141,52 @@ export const ExcelHandler = () => {
 
       const transformedRow: any = {};
       
-      // Copy all fields, ensuring proper data types
-      Object.keys(row).forEach(key => {
-        let value = row[key];
+      // Map and transform each field
+      Object.keys(row).forEach(originalKey => {
+        let value = row[originalKey];
+        
+        // Skip empty values
+        if (value === null || value === undefined || value === '') {
+          return;
+        }
+        
+        // Get the correct database column name
+        const dbColumnName = columnMapping[originalKey] || originalKey.toLowerCase().replace(/\s+/g, '_');
+        
+        // Skip Excel's internal id column - let database generate UUID
+        if (originalKey.toLowerCase() === 'id' && tableName !== 'general_info') {
+          return;
+        }
         
         // Handle dates
-        if (key.includes('date') || key.includes('Date')) {
+        if (dbColumnName.includes('date') || originalKey.toLowerCase().includes('date')) {
           if (typeof value === 'number') {
             // Excel date serial number
             const excelDate = new Date((value - 25569) * 86400 * 1000);
             value = excelDate.toISOString().split('T')[0];
           } else if (value && typeof value === 'string') {
-            // Try to parse string date
-            const parsedDate = new Date(value);
-            if (!isNaN(parsedDate.getTime())) {
-              value = parsedDate.toISOString().split('T')[0];
-            }
+            value = parseDate(value);
           }
         }
         
         // Handle numbers
-        if (key.includes('progress') || key.includes('score') || key.includes('impact') || 
-            key.includes('probability') || key.includes('actual') || key.includes('target') ||
-            key.includes('lead_time')) {
+        else if (dbColumnName.includes('progress') || dbColumnName.includes('score') || 
+                 dbColumnName.includes('impact') || dbColumnName.includes('probability') || 
+                 dbColumnName.includes('actual') || dbColumnName.includes('target') ||
+                 dbColumnName.includes('lead_time')) {
           value = parseFloat(value) || 0;
         }
         
-        // Clean up field names (remove spaces, convert to lowercase)
-        const cleanKey = key.toLowerCase().replace(/\s+/g, '_');
-        transformedRow[cleanKey] = value;
+        // Convert to string and trim
+        else if (typeof value === 'string') {
+          value = value.trim();
+        }
+        
+        transformedRow[dbColumnName] = value;
       });
 
-      // Add timestamps if not present
-      if (!transformedRow.created_at) {
-        transformedRow.created_at = new Date().toISOString();
-      }
-      if (!transformedRow.updated_at) {
-        transformedRow.updated_at = new Date().toISOString();
-      }
+      // Don't add timestamps - let database handle them
+      // The database should auto-generate created_at and updated_at
 
       return transformedRow;
     }).filter(row => row !== null);
@@ -141,10 +227,13 @@ export const ExcelHandler = () => {
           }
 
           console.log(`Processing sheet: ${sheetName} -> table: ${tableName}`);
+          console.log(`Raw data columns:`, Object.keys(rawData[0] || {}));
           console.log(`Raw data sample:`, rawData[0]);
 
           // Transform data for database
           const transformedData = transformDataForDatabase(tableName, rawData);
+          console.log(`Transformed data sample:`, transformedData[0]);
+          console.log(`Transformed columns:`, Object.keys(transformedData[0] || {}));
           
           // Validate each row
           const validationErrors: string[] = [];
@@ -156,12 +245,13 @@ export const ExcelHandler = () => {
           });
 
           if (validationErrors.length > 0) {
-            importErrors.push(`${sheetName}: ${validationErrors.join('; ')}`);
-            continue;
+            console.warn(`Validation errors for ${sheetName}:`, validationErrors);
+            importErrors.push(`${sheetName}: ${validationErrors.slice(0, 2).join('; ')}`);
+            // Don't skip - let's try to import what we can
           }
 
           processedData[tableName] = transformedData;
-          console.log(`Processed ${tableName}:`, transformedData);
+          console.log(`Final processed data for ${tableName}:`, transformedData);
         }
 
         // Show validation errors if any
