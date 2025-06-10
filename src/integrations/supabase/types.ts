@@ -44,6 +44,8 @@ export type Database = {
         }
         Relationships: []
         onConflict: 'action_id'
+        ignoreDuplicates: false,
+        columns: ['action_id', 'source', 'description', 'status', 'due_date', 'owner']
       }
       bookies_data: {
         Row: {
