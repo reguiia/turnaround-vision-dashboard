@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, Download, Database, FileText } from 'lucide-react';
@@ -7,57 +6,227 @@ import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui/badge';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 
+// Mapping between Excel sheet names and database table names
+const SHEET_TABLE_MAPPING: Record<string, string> = {
+  'General Info': 'general_info',
+  'Bookies Data': 'bookies_data',
+  'Risks': 'risks',
+  'Milestones + Deliverables': 'milestones',
+  'Action Log': 'action_log',
+  'Material Procurement': 'material_procurement',
+  'Service Procurement': 'service_procurement',
+  'Comments-Notes': 'comments_notes',
+  'Deliverables Status': 'deliverables_status'
+};
+
+// Required fields for each table
+const REQUIRED_FIELDS: Record<string, string[]> = {
+  general_info: ['field', 'value'],
+  bookies_data: ['area', 'target', 'actual'],
+  risks: ['risk_id', 'risk_name', 'probability', 'impact', 'risk_score'],
+  milestones: ['milestone', 'phase', 'due_date', 'status'],
+  action_log: ['action_id', 'source', 'description', 'status', 'due_date', 'owner'],
+  material_procurement: ['material_id', 'material_name', 'supplier', 'initiation_date', 'required_date', 'lead_time_days', 'status'],
+  service_procurement: ['service_id', 'service_name', 'provider', 'initiation_date', 'required_date', 'lead_time_days', 'status'],
+  comments_notes: ['author', 'category', 'comment', 'date'],
+  deliverables_status: ['deliverable', 'phase', 'owner', 'due_date', 'status']
+};
+
 export const ExcelHandler = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { data, importDataToSupabase } = useSupabaseData();
 
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Validate data structure
+  const validateRowData = (tableName: string, rowData: any): string[] => {
+    const errors: string[] = [];
+    const requiredFields = REQUIRED_FIELDS[tableName] || [];
+    
+    requiredFields.forEach(field => {
+      if (!rowData.hasOwnProperty(field) || rowData[field] === null || rowData[field] === undefined || rowData[field] === '') {
+        errors.push(`Missing required field: ${field}`);
+      }
+    });
+
+    return errors;
+  };
+
+  // Clean and transform data for database
+  const transformDataForDatabase = (tableName: string, rawData: any[]): any[] => {
+    return rawData.map((row, index) => {
+      // Remove empty rows
+      const hasData = Object.values(row).some(value => 
+        value !== null && value !== undefined && value !== ''
+      );
+      
+      if (!hasData) return null;
+
+      const transformedRow: any = {};
+      
+      // Copy all fields, ensuring proper data types
+      Object.keys(row).forEach(key => {
+        let value = row[key];
+        
+        // Handle dates
+        if (key.includes('date') || key.includes('Date')) {
+          if (typeof value === 'number') {
+            // Excel date serial number
+            const excelDate = new Date((value - 25569) * 86400 * 1000);
+            value = excelDate.toISOString().split('T')[0];
+          } else if (value && typeof value === 'string') {
+            // Try to parse string date
+            const parsedDate = new Date(value);
+            if (!isNaN(parsedDate.getTime())) {
+              value = parsedDate.toISOString().split('T')[0];
+            }
+          }
+        }
+        
+        // Handle numbers
+        if (key.includes('progress') || key.includes('score') || key.includes('impact') || 
+            key.includes('probability') || key.includes('actual') || key.includes('target') ||
+            key.includes('lead_time')) {
+          value = parseFloat(value) || 0;
+        }
+        
+        // Clean up field names (remove spaces, convert to lowercase)
+        const cleanKey = key.toLowerCase().replace(/\s+/g, '_');
+        transformedRow[cleanKey] = value;
+      });
+
+      // Add timestamps if not present
+      if (!transformedRow.created_at) {
+        transformedRow.created_at = new Date().toISOString();
+      }
+      if (!transformedRow.updated_at) {
+        transformedRow.updated_at = new Date().toISOString();
+      }
+
+      return transformedRow;
+    }).filter(row => row !== null);
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const data = e.target?.result;
         const workbook = XLSX.read(data, { type: 'binary' });
         
-        // Process each sheet
         const sheets = workbook.SheetNames;
-        console.log('Imported sheets:', sheets);
+        console.log('Available sheets:', sheets);
         
-        // Process specific sheets
-        const processedData: any = {};
+        const processedData: Record<string, any[]> = {};
+        const importErrors: string[] = [];
         
-        sheets.forEach(sheetName => {
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
-          processedData[sheetName] = jsonData;
-          console.log(`${sheetName} data:`, jsonData);
-        });
+        // Process each sheet
+        for (const sheetName of sheets) {
+          // Check if we have a mapping for this sheet
+          const tableName = SHEET_TABLE_MAPPING[sheetName];
+          if (!tableName) {
+            console.warn(`No mapping found for sheet: ${sheetName}`);
+            importErrors.push(`Unknown sheet: ${sheetName}`);
+            continue;
+          }
 
-        // Import data to Supabase
-        importDataToSupabase(processedData);
+          const worksheet = workbook.Sheets[sheetName];
+          const rawData = XLSX.utils.sheet_to_json(worksheet);
+          
+          if (rawData.length === 0) {
+            console.log(`Sheet ${sheetName} is empty, skipping...`);
+            continue;
+          }
+
+          console.log(`Processing sheet: ${sheetName} -> table: ${tableName}`);
+          console.log(`Raw data sample:`, rawData[0]);
+
+          // Transform data for database
+          const transformedData = transformDataForDatabase(tableName, rawData);
+          
+          // Validate each row
+          const validationErrors: string[] = [];
+          transformedData.forEach((row, index) => {
+            const rowErrors = validateRowData(tableName, row);
+            if (rowErrors.length > 0) {
+              validationErrors.push(`Row ${index + 1}: ${rowErrors.join(', ')}`);
+            }
+          });
+
+          if (validationErrors.length > 0) {
+            importErrors.push(`${sheetName}: ${validationErrors.join('; ')}`);
+            continue;
+          }
+
+          processedData[tableName] = transformedData;
+          console.log(`Processed ${tableName}:`, transformedData);
+        }
+
+        // Show validation errors if any
+        if (importErrors.length > 0) {
+          toast({
+            title: "Import Validation Errors",
+            description: importErrors.slice(0, 3).join('\n') + (importErrors.length > 3 ? '\n...' : ''),
+            variant: "destructive"
+          });
+          console.error('Import validation errors:', importErrors);
+        }
+
+        // Only proceed if we have valid data
+        if (Object.keys(processedData).length === 0) {
+          toast({
+            title: "No Valid Data",
+            description: "No valid data found to import. Please check your Excel file format.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Import data to Supabase with error handling
+        console.log('Importing to Supabase:', processedData);
+        
+        try {
+          const result = await importDataToSupabase(processedData);
+          
+          // Check if the import function returns success/error info
+          if (result === false || (result && result.error)) {
+            throw new Error(result?.error || 'Import to database failed');
+          }
+
+          toast({
+            title: "Import Successful",
+            description: `Successfully imported data for ${Object.keys(processedData).length} table(s).`,
+            variant: "default"
+          });
+
+        } catch (dbError) {
+          console.error('Database import error:', dbError);
+          toast({
+            title: "Database Import Failed",
+            description: `Failed to save data to database: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`,
+            variant: "destructive"
+          });
+        }
 
       } catch (error) {
         console.error('Import error:', error);
         toast({
           title: "Import Failed",
-          description: "Failed to parse Excel file. Please check the format.",
+          description: `Failed to process Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`,
           variant: "destructive"
         });
       }
     };
-    reader.readAsBinaryString(file);
     
-    // Reset file input
+    reader.readAsBinaryString(file);
     event.target.value = '';
   };
 
   const handleExport = () => {
     console.log('Export data:', data);
     
-    // Check if data exists and has content
     if (!data || Object.keys(data).length === 0) {
       toast({
         title: "No Data Available",
@@ -67,33 +236,37 @@ export const ExcelHandler = () => {
       return;
     }
 
-    // Use current Supabase data for export
     const workbook = XLSX.utils.book_new();
     
-    // Create sheets from the Supabase data
-    const sheetNames = [
-      'General Info',
-      'Bookies Data', 
-      'Risks',
-      'Milestones + Deliverables',
-      'Action Log',
-      'Material Procurement',
-      'Service Procurement',
-      'Comments-Notes',
-      'Deliverables Status'
-    ];
+    // Create sheets from the Supabase data using the reverse mapping
+    const reverseMapping = Object.fromEntries(
+      Object.entries(SHEET_TABLE_MAPPING).map(([sheet, table]) => [table, sheet])
+    );
 
     let hasData = false;
-    sheetNames.forEach(sheetName => {
-      const sheetData = data[sheetName] || [];
-      console.log(`${sheetName} sheet data:`, sheetData);
+    
+    Object.entries(data).forEach(([tableName, tableData]) => {
+      const sheetName = reverseMapping[tableName] || tableName;
+      console.log(`Exporting ${tableName} as sheet: ${sheetName}`);
       
-      if (sheetData.length > 0) {
+      if (Array.isArray(tableData) && tableData.length > 0) {
         hasData = true;
+        
+        // Clean data for export (remove internal fields)
+        const cleanData = tableData.map(row => {
+          const { id, created_at, updated_at, ...cleanRow } = row;
+          return cleanRow;
+        });
+        
+        const ws = XLSX.utils.json_to_sheet(cleanData);
+        XLSX.utils.book_append_sheet(workbook, ws, sheetName);
+      } else {
+        // Create empty sheet with headers
+        const headers = REQUIRED_FIELDS[tableName] || [];
+        const emptyRow = headers.reduce((acc, header) => ({ ...acc, [header]: '' }), {});
+        const ws = XLSX.utils.json_to_sheet([emptyRow]);
+        XLSX.utils.book_append_sheet(workbook, ws, sheetName);
       }
-      
-      const ws = XLSX.utils.json_to_sheet(sheetData);
-      XLSX.utils.book_append_sheet(workbook, ws, sheetName);
     });
 
     if (!hasData) {
@@ -105,18 +278,16 @@ export const ExcelHandler = () => {
       return;
     }
 
-    // Export the file
     XLSX.writeFile(workbook, 'turnaround_dashboard_live_data.xlsx');
     
     toast({
       title: "Export Successful",
-      description: "Live dashboard data exported successfully with all current data from database."
+      description: "Live dashboard data exported successfully."
     });
   };
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Data Source Indicator */}
       <div className="flex items-center gap-2">
         <Badge variant="default" className="flex items-center gap-1">
           <Database className="w-3 h-3" />
@@ -124,7 +295,6 @@ export const ExcelHandler = () => {
         </Badge>
       </div>
 
-      {/* Import/Export Buttons */}
       <div className="flex gap-2">
         <input
           type="file"
