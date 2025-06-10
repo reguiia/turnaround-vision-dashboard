@@ -5,7 +5,6 @@ export type Json =
   | null
   | { [key: string]: Json | undefined }
   | Json[]
-
 export type Database = {
   public: {
     Tables: {
@@ -44,6 +43,7 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+        onConflict: 'id'
       }
       bookies_data: {
         Row: {
@@ -71,6 +71,7 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+        onConflict: 'id'
       }
       comments_notes: {
         Row: {
@@ -101,6 +102,7 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+        onConflict: 'id'
       }
       deliverables_status: {
         Row: {
@@ -137,6 +139,7 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+        onConflict: 'id'
       }
       general_info: {
         Row: {
@@ -161,6 +164,7 @@ export type Database = {
           value?: string
         }
         Relationships: []
+        onConflict: 'field'
       }
       material_procurement: {
         Row: {
@@ -200,6 +204,7 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+        onConflict: 'id'
       }
       milestones: {
         Row: {
@@ -233,6 +238,7 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+        onConflict: 'id'
       }
       risks: {
         Row: {
@@ -269,6 +275,7 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+        onConflict: 'id'
       }
       service_procurement: {
         Row: {
@@ -308,6 +315,7 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+        onConflict: 'id'
       }
     }
     Views: {
@@ -326,7 +334,6 @@ export type Database = {
 }
 
 type DefaultSchema = Database[Extract<keyof Database, "public">]
-
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
@@ -353,7 +360,6 @@ export type Tables<
       ? R
       : never
     : never
-
 export type Tablesupsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
@@ -376,7 +382,6 @@ export type Tablesupsert<
       ? I
       : never
     : never
-
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
@@ -399,7 +404,6 @@ export type TablesUpdate<
       ? U
       : never
     : never
-
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
@@ -414,7 +418,6 @@ export type Enums<
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
-
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
@@ -429,7 +432,6 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
 export const Constants = {
   public: {
     Enums: {},
