@@ -79,7 +79,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         operations.push(
           supabase.from('general_info').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['General Info'].map((item: any) =>
-            supabase.from('general_info').insert({
+            supabase.from('general_info').upsert({
               field: item.Field || item.field,
               value: item.Value || item.value,
             })
@@ -92,7 +92,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         operations.push(
           supabase.from('bookies_data').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['Bookies Data'].map((item: any) =>
-            supabase.from('bookies_data').insert({
+            supabase.from('bookies_data').upsert({
               area: item.Area || item.area,
               target: item.Target || item.target,
               actual: item.Actual || item.actual,
@@ -106,7 +106,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         operations.push(
           supabase.from('risks').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['Risks'].map((item: any) =>
-            supabase.from('risks').insert({
+            supabase.from('risks').upsert({
               risk_id: item.Risk_ID || item.risk_id,
               risk_name: item.Risk_Name || item.risk_name,
               probability: item.Probability || item.probability,
@@ -123,7 +123,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         operations.push(
           supabase.from('milestones').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['Milestones + Deliverables'].map((item: any) =>
-            supabase.from('milestones').insert({
+            supabase.from('milestones').upsert({
               milestone: item.Milestone || item.milestone,
               phase: item.Phase || item.phase,
               due_date: item.Due_Date || item.due_date,
@@ -139,7 +139,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         operations.push(
           supabase.from('action_log').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['Action Log'].map((item: any) =>
-            supabase.from('action_log').insert({
+            supabase.from('action_log').upsert({
               action_id: item.Action_ID || item.action_id,
               description: item.Description || item.description,
               owner: item.Owner || item.owner,
@@ -156,7 +156,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         operations.push(
           supabase.from('material_procurement').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['Material Procurement'].map((item: any) =>
-            supabase.from('material_procurement').insert({
+            supabase.from('material_procurement').upsert({
               material_id: item.Material_ID || item.material_id,
               material_name: item.Material_Name || item.material_name,
               supplier: item.Supplier || item.supplier,
@@ -174,7 +174,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         operations.push(
           supabase.from('service_procurement').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['Service Procurement'].map((item: any) =>
-            supabase.from('service_procurement').insert({
+            supabase.from('service_procurement').upsert({
               service_id: item.Service_ID || item.service_id,
               service_name: item.Service_Name || item.service_name,
               provider: item.Provider || item.provider,
@@ -192,7 +192,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         operations.push(
           supabase.from('comments_notes').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['Comments-Notes'].map((item: any) =>
-            supabase.from('comments_notes').insert({
+            supabase.from('comments_notes').upsert({
               comment: item.Comment || item.comment,
               author: item.Author || item.author,
               category: item.Category || item.category,
@@ -207,7 +207,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({ 
         operations.push(
           supabase.from('deliverables_status').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['Deliverables Status'].map((item: any) =>
-            supabase.from('deliverables_status').insert({
+            supabase.from('deliverables_status').upsert({
               deliverable: item.Deliverable || item.deliverable,
               phase: item.Phase || item.phase,
               owner: item.Owner || item.owner,
