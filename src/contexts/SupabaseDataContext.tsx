@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Database } from "@/types";
+import { Database } from "@/integrations/supabase/types";
 
 export interface SupabaseTableData {
   [key: string]: any[];
