@@ -71,7 +71,7 @@ export const useSupabaseData = () => {
         operations.push(
           supabase.from('general_info').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['General Info'].map((item: any) =>
-            supabase.from('general_info').insert({
+            supabase.from('general_info').upsert({
               field: item.Field || item.field,
               value: item.Value || item.value,
             })
@@ -83,7 +83,7 @@ export const useSupabaseData = () => {
         operations.push(
           supabase.from('bookies_data').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['Bookies Data'].map((item: any) =>
-            supabase.from('bookies_data').insert({
+            supabase.from('bookies_data').upsert({
               area: item.Area || item.area,
               target: item.Target || item.target,
               actual: item.Actual || item.actual,
@@ -96,7 +96,7 @@ export const useSupabaseData = () => {
         operations.push(
           supabase.from('risks').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
           ...importedData['Risks'].map((item: any) =>
-            supabase.from('risks').insert({
+            supabase.from('risks').upsert({
               risk_id: item.Risk_ID || item.risk_id,
               risk_name: item.Risk_Name || item.risk_name,
               probability: item.Probability || item.probability,
