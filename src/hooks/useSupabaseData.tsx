@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -63,7 +64,7 @@ export const useSupabaseData = () => {
 
   const importDataToSupabase = async (importedData: any) => {
     try {
-      // Clear all existing data first - Execute the queries properly
+      // Clear all existing data first
       await Promise.all([
         supabase.from('general_info').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
         supabase.from('bookies_data').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
@@ -85,7 +86,7 @@ export const useSupabaseData = () => {
           field: item.Field || item.field,
           value: item.Value || item.value,
         }));
-        insertOperations.push(supabase.from('general_info').upsert(generalInfoData).then(result => result));
+        insertOperations.push(Promise.resolve(supabase.from('general_info').upsert(generalInfoData)));
       }
 
       // Insert Bookies Data
@@ -95,7 +96,7 @@ export const useSupabaseData = () => {
           target: item.Target || item.target,
           actual: item.Actual || item.actual,
         }));
-        insertOperations.push(supabase.from('bookies_data').upsert(bookiesData).then(result => result));
+        insertOperations.push(Promise.resolve(supabase.from('bookies_data').upsert(bookiesData)));
       }
 
       // Insert Risks
@@ -108,7 +109,7 @@ export const useSupabaseData = () => {
           risk_score: item.Risk_Score || item.risk_score,
           mitigation: item.Mitigation || item.mitigation || null,
         }));
-        insertOperations.push(supabase.from('risks').upsert(risksData).then(result => result));
+        insertOperations.push(Promise.resolve(supabase.from('risks').upsert(risksData)));
       }
 
       // Insert Milestones
@@ -120,7 +121,7 @@ export const useSupabaseData = () => {
           status: item.Status || item.status,
           progress: item.Progress || item.progress || 0,
         }));
-        insertOperations.push(supabase.from('milestones').upsert(milestonesData).then(result => result));
+        insertOperations.push(Promise.resolve(supabase.from('milestones').upsert(milestonesData)));
       }
 
       // Insert Action Log
@@ -133,7 +134,7 @@ export const useSupabaseData = () => {
           status: item.Status || item.status,
           source: item.Source || item.source,
         }));
-        insertOperations.push(supabase.from('action_log').upsert(actionLogData).then(result => result));
+        insertOperations.push(Promise.resolve(supabase.from('action_log').upsert(actionLogData)));
       }
 
       // Insert Material Procurement
@@ -147,7 +148,7 @@ export const useSupabaseData = () => {
           lead_time_days: item.Lead_Time_Days || item.lead_time_days,
           status: item.Status || item.status,
         }));
-        insertOperations.push(supabase.from('material_procurement').upsert(materialData).then(result => result));
+        insertOperations.push(Promise.resolve(supabase.from('material_procurement').upsert(materialData)));
       }
 
       // Insert Service Procurement
@@ -161,7 +162,7 @@ export const useSupabaseData = () => {
           lead_time_days: item.Lead_Time_Days || item.lead_time_days,
           status: item.Status || item.status,
         }));
-        insertOperations.push(supabase.from('service_procurement').upsert(serviceData).then(result => result));
+        insertOperations.push(Promise.resolve(supabase.from('service_procurement').upsert(serviceData)));
       }
 
       // Insert Comments-Notes
@@ -172,7 +173,7 @@ export const useSupabaseData = () => {
           category: item.Category || item.category,
           date: item.Date || item.date,
         }));
-        insertOperations.push(supabase.from('comments_notes').upsert(commentsData).then(result => result));
+        insertOperations.push(Promise.resolve(supabase.from('comments_notes').upsert(commentsData)));
       }
 
       // Insert Deliverables Status
@@ -185,7 +186,7 @@ export const useSupabaseData = () => {
           status: item.Status || item.status,
           progress: item.Progress || item.progress || 0,
         }));
-        insertOperations.push(supabase.from('deliverables_status').upsert(deliverablesData).then(result => result));
+        insertOperations.push(Promise.resolve(supabase.from('deliverables_status').upsert(deliverablesData)));
       }
 
       // Execute all insertions
