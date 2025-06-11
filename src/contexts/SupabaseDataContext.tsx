@@ -8,7 +8,6 @@ import React, {
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Database } from "@/integrations/supabase/types";
 
 export interface SupabaseTableData {
   [key: string]: any[];
@@ -87,171 +86,477 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({
       let errorCount = 0;
       const errors: string[] = [];
 
-      // Define table mappings with proper upsert logic
-      const tableMappings = {
-        "General Info": {
-          table: "general_info",
-          uniqueField: "field",
-          transform: (item: any) => ({
-            field: item.Field || item.field || "",
-            value: item.Value || item.value || "",
-          }),
-        },
-        "Bookies Data": {
-          table: "bookies_data",
-          uniqueField: "area",
-          transform: (item: any) => ({
-            area: item.Area || item.area || "",
-            target: Number(item.Target || item.target || 0),
-            actual: Number(item.Actual || item.actual || 0),
-          }),
-        },
-        Risks: {
-          table: "risks",
-          uniqueField: "risk_id",
-          transform: (item: any) => ({
-            risk_id: item.Risk_ID || item.risk_id || "",
-            risk_name: item.Risk_Name || item.risk_name || "",
-            probability: Number(item.Probability || item.probability || 0),
-            impact: Number(item.Impact || item.impact || 0),
-            risk_score: Number(item.Risk_Score || item.risk_score || 0),
-            mitigation: item.Mitigation || item.mitigation || null,
-          }),
-        },
-        "Milestones + Deliverables": {
-          table: "milestones",
-          uniqueField: "milestone",
-          transform: (item: any) => ({
-            milestone: item.Milestone || item.milestone || "",
-            phase: item.Phase || item.phase || "",
-            due_date: item.Due_Date || item.due_date || "",
-            status: item.Status || item.status || "",
-            progress: Number(item.Progress || item.progress || 0),
-          }),
-        },
-        "Action Log": {
-          table: "action_log",
-          uniqueField: "action_id",
-          transform: (item: any) => ({
-            action_id: item.Action_ID || item.action_id || "",
-            description: item.Description || item.description || "",
-            owner: item.Owner || item.owner || "",
-            due_date: item.Due_Date || item.due_date || "",
-            status: item.Status || item.status || "",
-            source: item.Source || item.source || "",
-          }),
-        },
-        "Material Procurement": {
-          table: "material_procurement",
-          uniqueField: "material_id",
-          transform: (item: any) => ({
-            material_id: item.Material_ID || item.material_id || "",
-            material_name: item.Material_Name || item.material_name || "",
-            supplier: item.Supplier || item.supplier || "",
-            initiation_date: item.Initiation_Date || item.initiation_date || "",
-            required_date: item.Required_Date || item.required_date || "",
-            lead_time_days: Number(item.Lead_Time_Days || item.lead_time_days || 0),
-            status: item.Status || item.status || "",
-          }),
-        },
-        "Service Procurement": {
-          table: "service_procurement",
-          uniqueField: "service_id",
-          transform: (item: any) => ({
-            service_id: item.Service_ID || item.service_id || "",
-            service_name: item.Service_Name || item.service_name || "",
-            provider: item.Provider || item.provider || "",
-            initiation_date: item.Initiation_Date || item.initiation_date || "",
-            required_date: item.Required_Date || item.required_date || "",
-            lead_time_days: Number(item.Lead_Time_Days || item.lead_time_days || 0),
-            status: item.Status || item.status || "",
-          }),
-        },
-        "Comments-Notes": {
-          table: "comments_notes",
-          uniqueField: "comment",
-          transform: (item: any) => ({
-            comment: item.Comment || item.comment || "",
-            author: item.Author || item.author || "",
-            category: item.Category || item.category || "",
-            date: item.Date || item.date || "",
-          }),
-        },
-        "Deliverables Status": {
-          table: "deliverables_status",
-          uniqueField: "deliverable",
-          transform: (item: any) => ({
-            deliverable: item.Deliverable || item.deliverable || "",
-            phase: item.Phase || item.phase || "",
-            owner: item.Owner || item.owner || "",
-            due_date: item.Due_Date || item.due_date || "",
-            status: item.Status || item.status || "",
-            progress: Number(item.Progress || item.progress || 0),
-          }),
-        },
-      };
+      // Helper function to process general_info table
+      const processGeneralInfo = async (items: any[]) => {
+        if (!items || items.length === 0) return;
+        
+        for (const item of items) {
+          try {
+            const field = item.Field || item.field || "";
+            const value = item.Value || item.value || "";
+            
+            if (!field.trim()) continue;
 
-      // Process each sheet
-      for (const [sheetName, mapping] of Object.entries(tableMappings)) {
-        if (importedData[sheetName] && Array.isArray(importedData[sheetName])) {
-          const rows = importedData[sheetName];
-          console.log(`Processing ${sheetName} with ${rows.length} rows`);
+            const { data: existing } = await supabase
+              .from("general_info")
+              .select("id")
+              .eq("field", field)
+              .maybeSingle();
 
-          for (const item of rows) {
-            try {
-              const transformedData = mapping.transform(item);
+            if (existing) {
+              const { error } = await supabase
+                .from("general_info")
+                .update({ field, value })
+                .eq("id", existing.id);
               
-              // Skip rows with empty unique identifiers
-              if (!transformedData[mapping.uniqueField] || transformedData[mapping.uniqueField].toString().trim() === "") {
-                console.log(`Skipping row with empty ${mapping.uniqueField} in ${sheetName}`);
-                continue;
-              }
-
-              // Check if record exists
-              const { data: existingRecord } = await supabase
-                .from(mapping.table)
-                .select("id")
-                .eq(mapping.uniqueField, transformedData[mapping.uniqueField])
-                .maybeSingle();
-
-              if (existingRecord) {
-                // Update existing record
-                const { error } = await supabase
-                  .from(mapping.table)
-                  .update(transformedData)
-                  .eq("id", existingRecord.id);
-
-                if (error) {
-                  errors.push(`Error updating ${sheetName}: ${error.message}`);
-                  errorCount++;
-                  console.error(`Update error in ${sheetName}:`, error);
-                } else {
-                  successCount++;
-                  console.log(`Updated record in ${sheetName}:`, transformedData[mapping.uniqueField]);
-                }
+              if (error) {
+                errors.push(`Error updating general_info: ${error.message}`);
+                errorCount++;
               } else {
-                // Insert new record
-                const { error } = await supabase
-                  .from(mapping.table)
-                  .insert(transformedData);
-
-                if (error) {
-                  errors.push(`Error inserting ${sheetName}: ${error.message}`);
-                  errorCount++;
-                  console.error(`Insert error in ${sheetName}:`, error);
-                } else {
-                  successCount++;
-                  console.log(`Inserted new record in ${sheetName}:`, transformedData[mapping.uniqueField]);
-                }
+                successCount++;
               }
-            } catch (rowError) {
-              console.error(`Error processing row in ${sheetName}:`, rowError);
-              errors.push(`Error in ${sheetName}: ${rowError.message || "Unknown error"}`);
-              errorCount++;
+            } else {
+              const { error } = await supabase
+                .from("general_info")
+                .insert({ field, value });
+              
+              if (error) {
+                errors.push(`Error inserting general_info: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
             }
+          } catch (rowError: any) {
+            errors.push(`Error in general_info: ${rowError.message || "Unknown error"}`);
+            errorCount++;
           }
         }
-      }
+      };
+
+      // Helper function to process bookies_data table
+      const processBookiesData = async (items: any[]) => {
+        if (!items || items.length === 0) return;
+        
+        for (const item of items) {
+          try {
+            const area = item.Area || item.area || "";
+            const target = Number(item.Target || item.target || 0);
+            const actual = Number(item.Actual || item.actual || 0);
+            
+            if (!area.trim()) continue;
+
+            const { data: existing } = await supabase
+              .from("bookies_data")
+              .select("id")
+              .eq("area", area)
+              .maybeSingle();
+
+            if (existing) {
+              const { error } = await supabase
+                .from("bookies_data")
+                .update({ area, target, actual })
+                .eq("id", existing.id);
+              
+              if (error) {
+                errors.push(`Error updating bookies_data: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            } else {
+              const { error } = await supabase
+                .from("bookies_data")
+                .insert({ area, target, actual });
+              
+              if (error) {
+                errors.push(`Error inserting bookies_data: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            }
+          } catch (rowError: any) {
+            errors.push(`Error in bookies_data: ${rowError.message || "Unknown error"}`);
+            errorCount++;
+          }
+        }
+      };
+
+      // Helper function to process risks table
+      const processRisks = async (items: any[]) => {
+        if (!items || items.length === 0) return;
+        
+        for (const item of items) {
+          try {
+            const risk_id = item.Risk_ID || item.risk_id || "";
+            const risk_name = item.Risk_Name || item.risk_name || "";
+            const probability = Number(item.Probability || item.probability || 0);
+            const impact = Number(item.Impact || item.impact || 0);
+            const risk_score = Number(item.Risk_Score || item.risk_score || 0);
+            const mitigation = item.Mitigation || item.mitigation || null;
+            
+            if (!risk_id.trim()) continue;
+
+            const { data: existing } = await supabase
+              .from("risks")
+              .select("id")
+              .eq("risk_id", risk_id)
+              .maybeSingle();
+
+            if (existing) {
+              const { error } = await supabase
+                .from("risks")
+                .update({ risk_id, risk_name, probability, impact, risk_score, mitigation })
+                .eq("id", existing.id);
+              
+              if (error) {
+                errors.push(`Error updating risks: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            } else {
+              const { error } = await supabase
+                .from("risks")
+                .insert({ risk_id, risk_name, probability, impact, risk_score, mitigation });
+              
+              if (error) {
+                errors.push(`Error inserting risks: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            }
+          } catch (rowError: any) {
+            errors.push(`Error in risks: ${rowError.message || "Unknown error"}`);
+            errorCount++;
+          }
+        }
+      };
+
+      // Helper function to process milestones table
+      const processMilestones = async (items: any[]) => {
+        if (!items || items.length === 0) return;
+        
+        for (const item of items) {
+          try {
+            const milestone = item.Milestone || item.milestone || "";
+            const phase = item.Phase || item.phase || "";
+            const due_date = item.Due_Date || item.due_date || "";
+            const status = item.Status || item.status || "";
+            const progress = Number(item.Progress || item.progress || 0);
+            
+            if (!milestone.trim()) continue;
+
+            const { data: existing } = await supabase
+              .from("milestones")
+              .select("id")
+              .eq("milestone", milestone)
+              .maybeSingle();
+
+            if (existing) {
+              const { error } = await supabase
+                .from("milestones")
+                .update({ milestone, phase, due_date, status, progress })
+                .eq("id", existing.id);
+              
+              if (error) {
+                errors.push(`Error updating milestones: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            } else {
+              const { error } = await supabase
+                .from("milestones")
+                .insert({ milestone, phase, due_date, status, progress });
+              
+              if (error) {
+                errors.push(`Error inserting milestones: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            }
+          } catch (rowError: any) {
+            errors.push(`Error in milestones: ${rowError.message || "Unknown error"}`);
+            errorCount++;
+          }
+        }
+      };
+
+      // Helper function to process action_log table
+      const processActionLog = async (items: any[]) => {
+        if (!items || items.length === 0) return;
+        
+        for (const item of items) {
+          try {
+            const action_id = item.Action_ID || item.action_id || "";
+            const description = item.Description || item.description || "";
+            const owner = item.Owner || item.owner || "";
+            const due_date = item.Due_Date || item.due_date || "";
+            const status = item.Status || item.status || "";
+            const source = item.Source || item.source || "";
+            
+            if (!action_id.trim()) continue;
+
+            const { data: existing } = await supabase
+              .from("action_log")
+              .select("id")
+              .eq("action_id", action_id)
+              .maybeSingle();
+
+            if (existing) {
+              const { error } = await supabase
+                .from("action_log")
+                .update({ action_id, description, owner, due_date, status, source })
+                .eq("id", existing.id);
+              
+              if (error) {
+                errors.push(`Error updating action_log: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            } else {
+              const { error } = await supabase
+                .from("action_log")
+                .insert({ action_id, description, owner, due_date, status, source });
+              
+              if (error) {
+                errors.push(`Error inserting action_log: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            }
+          } catch (rowError: any) {
+            errors.push(`Error in action_log: ${rowError.message || "Unknown error"}`);
+            errorCount++;
+          }
+        }
+      };
+
+      // Helper function to process material_procurement table
+      const processMaterialProcurement = async (items: any[]) => {
+        if (!items || items.length === 0) return;
+        
+        for (const item of items) {
+          try {
+            const material_id = item.Material_ID || item.material_id || "";
+            const material_name = item.Material_Name || item.material_name || "";
+            const supplier = item.Supplier || item.supplier || "";
+            const initiation_date = item.Initiation_Date || item.initiation_date || "";
+            const required_date = item.Required_Date || item.required_date || "";
+            const lead_time_days = Number(item.Lead_Time_Days || item.lead_time_days || 0);
+            const status = item.Status || item.status || "";
+            
+            if (!material_id.trim()) continue;
+
+            const { data: existing } = await supabase
+              .from("material_procurement")
+              .select("id")
+              .eq("material_id", material_id)
+              .maybeSingle();
+
+            if (existing) {
+              const { error } = await supabase
+                .from("material_procurement")
+                .update({ material_id, material_name, supplier, initiation_date, required_date, lead_time_days, status })
+                .eq("id", existing.id);
+              
+              if (error) {
+                errors.push(`Error updating material_procurement: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            } else {
+              const { error } = await supabase
+                .from("material_procurement")
+                .insert({ material_id, material_name, supplier, initiation_date, required_date, lead_time_days, status });
+              
+              if (error) {
+                errors.push(`Error inserting material_procurement: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            }
+          } catch (rowError: any) {
+            errors.push(`Error in material_procurement: ${rowError.message || "Unknown error"}`);
+            errorCount++;
+          }
+        }
+      };
+
+      // Helper function to process service_procurement table
+      const processServiceProcurement = async (items: any[]) => {
+        if (!items || items.length === 0) return;
+        
+        for (const item of items) {
+          try {
+            const service_id = item.Service_ID || item.service_id || "";
+            const service_name = item.Service_Name || item.service_name || "";
+            const provider = item.Provider || item.provider || "";
+            const initiation_date = item.Initiation_Date || item.initiation_date || "";
+            const required_date = item.Required_Date || item.required_date || "";
+            const lead_time_days = Number(item.Lead_Time_Days || item.lead_time_days || 0);
+            const status = item.Status || item.status || "";
+            
+            if (!service_id.trim()) continue;
+
+            const { data: existing } = await supabase
+              .from("service_procurement")
+              .select("id")
+              .eq("service_id", service_id)
+              .maybeSingle();
+
+            if (existing) {
+              const { error } = await supabase
+                .from("service_procurement")
+                .update({ service_id, service_name, provider, initiation_date, required_date, lead_time_days, status })
+                .eq("id", existing.id);
+              
+              if (error) {
+                errors.push(`Error updating service_procurement: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            } else {
+              const { error } = await supabase
+                .from("service_procurement")
+                .insert({ service_id, service_name, provider, initiation_date, required_date, lead_time_days, status });
+              
+              if (error) {
+                errors.push(`Error inserting service_procurement: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            }
+          } catch (rowError: any) {
+            errors.push(`Error in service_procurement: ${rowError.message || "Unknown error"}`);
+            errorCount++;
+          }
+        }
+      };
+
+      // Helper function to process comments_notes table
+      const processCommentsNotes = async (items: any[]) => {
+        if (!items || items.length === 0) return;
+        
+        for (const item of items) {
+          try {
+            const comment = item.Comment || item.comment || "";
+            const author = item.Author || item.author || "";
+            const category = item.Category || item.category || "";
+            const date = item.Date || item.date || "";
+            
+            if (!comment.trim()) continue;
+
+            const { data: existing } = await supabase
+              .from("comments_notes")
+              .select("id")
+              .eq("comment", comment)
+              .eq("author", author)
+              .maybeSingle();
+
+            if (existing) {
+              const { error } = await supabase
+                .from("comments_notes")
+                .update({ comment, author, category, date })
+                .eq("id", existing.id);
+              
+              if (error) {
+                errors.push(`Error updating comments_notes: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            } else {
+              const { error } = await supabase
+                .from("comments_notes")
+                .insert({ comment, author, category, date });
+              
+              if (error) {
+                errors.push(`Error inserting comments_notes: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            }
+          } catch (rowError: any) {
+            errors.push(`Error in comments_notes: ${rowError.message || "Unknown error"}`);
+            errorCount++;
+          }
+        }
+      };
+
+      // Helper function to process deliverables_status table
+      const processDeliverablesStatus = async (items: any[]) => {
+        if (!items || items.length === 0) return;
+        
+        for (const item of items) {
+          try {
+            const deliverable = item.Deliverable || item.deliverable || "";
+            const phase = item.Phase || item.phase || "";
+            const owner = item.Owner || item.owner || "";
+            const due_date = item.Due_Date || item.due_date || "";
+            const status = item.Status || item.status || "";
+            const progress = Number(item.Progress || item.progress || 0);
+            
+            if (!deliverable.trim()) continue;
+
+            const { data: existing } = await supabase
+              .from("deliverables_status")
+              .select("id")
+              .eq("deliverable", deliverable)
+              .maybeSingle();
+
+            if (existing) {
+              const { error } = await supabase
+                .from("deliverables_status")
+                .update({ deliverable, phase, owner, due_date, status, progress })
+                .eq("id", existing.id);
+              
+              if (error) {
+                errors.push(`Error updating deliverables_status: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            } else {
+              const { error } = await supabase
+                .from("deliverables_status")
+                .insert({ deliverable, phase, owner, due_date, status, progress });
+              
+              if (error) {
+                errors.push(`Error inserting deliverables_status: ${error.message}`);
+                errorCount++;
+              } else {
+                successCount++;
+              }
+            }
+          } catch (rowError: any) {
+            errors.push(`Error in deliverables_status: ${rowError.message || "Unknown error"}`);
+            errorCount++;
+          }
+        }
+      };
+
+      // Process each sheet with explicit function calls
+      await processGeneralInfo(importedData['General Info']);
+      await processBookiesData(importedData['Bookies Data']);
+      await processRisks(importedData['Risks']);
+      await processMilestones(importedData['Milestones + Deliverables']);
+      await processActionLog(importedData['Action Log']);
+      await processMaterialProcurement(importedData['Material Procurement']);
+      await processServiceProcurement(importedData['Service Procurement']);
+      await processCommentsNotes(importedData['Comments-Notes']);
+      await processDeliverablesStatus(importedData['Deliverables Status']);
 
       // Show results
       if (errorCount === 0) {
@@ -277,7 +582,7 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Refresh data to update dashboard graphs
       await fetchAllData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error importing data:", error);
       toast({
         title: "Import Failed",

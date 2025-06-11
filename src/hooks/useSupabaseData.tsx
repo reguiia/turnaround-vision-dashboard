@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -65,92 +66,85 @@ export const useSupabaseData = () => {
     try {
       const operations: Promise<any>[] = [];
 
-      // Helper function to process each table
-      const processTable = (tableName: string, data: any[], idField: string, transformFn: (item: any) => any) => {
-        if (!data || data.length === 0) return;
-        
-        // First delete all existing records except dummy record
-        operations.push(
-          supabase.from(tableName).delete().neq('id', '00000000-0000-0000-0000-000000000000')
-        );
-        
-        // Then upsert all new records
-        operations.push(
-          supabase.from(tableName).upsert(
-            data.map(item => transformFn(item)),
-            { onConflict: idField }
-          )
-        );
-      };
-
-      // Process each table
-      processTable(
-        'general_info',
-        importedData['General Info'] || [],
-        'field',
-        (item) => ({
-          field: item.Field || item.field,
-          value: item.Value || item.value,
-        })
+      // Clear all existing data first
+      operations.push(
+        supabase.from('general_info').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('bookies_data').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('risks').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('milestones').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('action_log').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('material_procurement').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('service_procurement').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('comments_notes').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('deliverables_status').delete().neq('id', '00000000-0000-0000-0000-000000000000')
       );
 
-      processTable(
-        'bookies_data',
-        importedData['Bookies Data'] || [],
-        'id',
-        (item) => ({
+      // Wait for deletions to complete
+      await Promise.all(operations);
+
+      // Now insert new data
+      const insertOperations: Promise<any>[] = [];
+
+      // Insert General Info
+      if (importedData['General Info'] && importedData['General Info'].length > 0) {
+        const generalInfoData = importedData['General Info'].map((item: any) => ({
+          field: item.Field || item.field,
+          value: item.Value || item.value,
+        }));
+        insertOperations.push(supabase.from('general_info').insert(generalInfoData));
+      }
+
+      // Insert Bookies Data
+      if (importedData['Bookies Data'] && importedData['Bookies Data'].length > 0) {
+        const bookiesData = importedData['Bookies Data'].map((item: any) => ({
           area: item.Area || item.area,
           target: item.Target || item.target,
           actual: item.Actual || item.actual,
-        })
-      );
+        }));
+        insertOperations.push(supabase.from('bookies_data').insert(bookiesData));
+      }
 
-      processTable(
-        'risks',
-        importedData['Risks'] || [],
-        'risk_id',
-        (item) => ({
+      // Insert Risks
+      if (importedData['Risks'] && importedData['Risks'].length > 0) {
+        const risksData = importedData['Risks'].map((item: any) => ({
           risk_id: item.Risk_ID || item.risk_id,
           risk_name: item.Risk_Name || item.risk_name,
           probability: item.Probability || item.probability,
           impact: item.Impact || item.impact,
           risk_score: item.Risk_Score || item.risk_score,
           mitigation: item.Mitigation || item.mitigation || null,
-        })
-      );
+        }));
+        insertOperations.push(supabase.from('risks').insert(risksData));
+      }
 
-      processTable(
-        'milestones',
-        importedData['Milestones + Deliverables'] || [],
-        'id',
-        (item) => ({
+      // Insert Milestones
+      if (importedData['Milestones + Deliverables'] && importedData['Milestones + Deliverables'].length > 0) {
+        const milestonesData = importedData['Milestones + Deliverables'].map((item: any) => ({
           milestone: item.Milestone || item.milestone,
           phase: item.Phase || item.phase,
           due_date: item.Due_Date || item.due_date,
           status: item.Status || item.status,
           progress: item.Progress || item.progress || 0,
-        })
-      );
+        }));
+        insertOperations.push(supabase.from('milestones').insert(milestonesData));
+      }
 
-      processTable(
-        'action_log',
-        importedData['Action Log'] || [],
-        'action_id',
-        (item) => ({
+      // Insert Action Log
+      if (importedData['Action Log'] && importedData['Action Log'].length > 0) {
+        const actionLogData = importedData['Action Log'].map((item: any) => ({
           action_id: item.Action_ID || item.action_id,
           description: item.Description || item.description,
           owner: item.Owner || item.owner,
           due_date: item.Due_Date || item.due_date,
           status: item.Status || item.status,
           source: item.Source || item.source,
-        })
-      );
+        }));
+        insertOperations.push(supabase.from('action_log').insert(actionLogData));
+      }
 
-      processTable(
-        'material_procurement',
-        importedData['Material Procurement'] || [],
-        'material_id',
-        (item) => ({
+      // Insert Material Procurement
+      if (importedData['Material Procurement'] && importedData['Material Procurement'].length > 0) {
+        const materialData = importedData['Material Procurement'].map((item: any) => ({
           material_id: item.Material_ID || item.material_id,
           material_name: item.Material_Name || item.material_name,
           supplier: item.Supplier || item.supplier,
@@ -158,14 +152,13 @@ export const useSupabaseData = () => {
           required_date: item.Required_Date || item.required_date,
           lead_time_days: item.Lead_Time_Days || item.lead_time_days,
           status: item.Status || item.status,
-        })
-      );
+        }));
+        insertOperations.push(supabase.from('material_procurement').insert(materialData));
+      }
 
-      processTable(
-        'service_procurement',
-        importedData['Service Procurement'] || [],
-        'service_id',
-        (item) => ({
+      // Insert Service Procurement
+      if (importedData['Service Procurement'] && importedData['Service Procurement'].length > 0) {
+        const serviceData = importedData['Service Procurement'].map((item: any) => ({
           service_id: item.Service_ID || item.service_id,
           service_name: item.Service_Name || item.service_name,
           provider: item.Provider || item.provider,
@@ -173,37 +166,36 @@ export const useSupabaseData = () => {
           required_date: item.Required_Date || item.required_date,
           lead_time_days: item.Lead_Time_Days || item.lead_time_days,
           status: item.Status || item.status,
-        })
-      );
+        }));
+        insertOperations.push(supabase.from('service_procurement').insert(serviceData));
+      }
 
-      processTable(
-        'comments_notes',
-        importedData['Comments-Notes'] || [],
-        'id',
-        (item) => ({
+      // Insert Comments-Notes
+      if (importedData['Comments-Notes'] && importedData['Comments-Notes'].length > 0) {
+        const commentsData = importedData['Comments-Notes'].map((item: any) => ({
           comment: item.Comment || item.comment,
           author: item.Author || item.author,
           category: item.Category || item.category,
           date: item.Date || item.date,
-        })
-      );
+        }));
+        insertOperations.push(supabase.from('comments_notes').insert(commentsData));
+      }
 
-      processTable(
-        'deliverables_status',
-        importedData['Deliverables Status'] || [],
-        'id',
-        (item) => ({
+      // Insert Deliverables Status
+      if (importedData['Deliverables Status'] && importedData['Deliverables Status'].length > 0) {
+        const deliverablesData = importedData['Deliverables Status'].map((item: any) => ({
           deliverable: item.Deliverable || item.deliverable,
           phase: item.Phase || item.phase,
           owner: item.Owner || item.owner,
           due_date: item.Due_Date || item.due_date,
           status: item.Status || item.status,
           progress: item.Progress || item.progress || 0,
-        })
-      );
+        }));
+        insertOperations.push(supabase.from('deliverables_status').insert(deliverablesData));
+      }
 
-      // Execute all operations
-      await Promise.all(operations);
+      // Execute all insertions
+      await Promise.all(insertOperations);
 
       toast({
         title: 'Import Successful',
