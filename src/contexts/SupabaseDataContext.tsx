@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -86,256 +87,107 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({
       let errorCount = 0;
       const errors: string[] = [];
 
-      // Define expected sheet names and their corresponding table mappings
-      const tableMappings: {
-        [key: string]: {
-          table: string;
-          identifierField: string;
-          fields: string[];
-          fieldMappings: { [key: string]: string[] };
-        };
-      } = {
+      // Define table mappings with proper upsert logic
+      const tableMappings = {
         "General Info": {
           table: "general_info",
-          identifierField: "field",
-          fields: ["field", "value"],
-          fieldMappings: {
-            field: ["field", "Field", "FIELD"],
-            value: ["value", "Value", "VALUE"],
-          },
+          uniqueField: "field",
+          transform: (item: any) => ({
+            field: item.Field || item.field || "",
+            value: item.Value || item.value || "",
+          }),
         },
         "Bookies Data": {
           table: "bookies_data",
-          identifierField: "area",
-          fields: ["area", "target", "actual"],
-          fieldMappings: {
-            area: ["area", "Area", "AREA"],
-            target: ["target", "Target", "TARGET"],
-            actual: ["actual", "Actual", "ACTUAL"],
-          },
+          uniqueField: "area",
+          transform: (item: any) => ({
+            area: item.Area || item.area || "",
+            target: Number(item.Target || item.target || 0),
+            actual: Number(item.Actual || item.actual || 0),
+          }),
         },
         Risks: {
           table: "risks",
-          identifierField: "risk_id",
-          fields: [
-            "risk_id",
-            "risk_name",
-            "probability",
-            "impact",
-            "risk_score",
-            "mitigation",
-          ],
-          fieldMappings: {
-            risk_id: ["risk_id", "Risk ID", "Risk_ID", "RiskID", "RISK_ID"],
-            risk_name: [
-              "risk_name",
-              "Risk Name",
-              "Risk_Name",
-              "RiskName",
-              "RISK_NAME",
-            ],
-            probability: ["probability", "Probability", "PROBABILITY"],
-            impact: ["impact", "Impact", "IMPACT"],
-            risk_score: [
-              "risk_score",
-              "Risk Score",
-              "Risk_Score",
-              "RiskScore",
-              "RISK_SCORE",
-            ],
-            mitigation: ["mitigation", "Mitigation", "MITIGATION"],
-          },
+          uniqueField: "risk_id",
+          transform: (item: any) => ({
+            risk_id: item.Risk_ID || item.risk_id || "",
+            risk_name: item.Risk_Name || item.risk_name || "",
+            probability: Number(item.Probability || item.probability || 0),
+            impact: Number(item.Impact || item.impact || 0),
+            risk_score: Number(item.Risk_Score || item.risk_score || 0),
+            mitigation: item.Mitigation || item.mitigation || null,
+          }),
         },
         "Milestones + Deliverables": {
           table: "milestones",
-          identifierField: "milestone",
-          fields: ["milestone", "phase", "due_date", "status", "progress"],
-          fieldMappings: {
-            milestone: ["milestone", "Milestone", "MILESTONE"],
-            phase: ["phase", "Phase", "PHASE"],
-            due_date: [
-              "due_date",
-              "Due Date",
-              "Due_Date",
-              "DueDate",
-              "DUE_DATE",
-            ],
-            status: ["status", "Status", "STATUS"],
-            progress: ["progress", "Progress", "PROGRESS"],
-          },
+          uniqueField: "milestone",
+          transform: (item: any) => ({
+            milestone: item.Milestone || item.milestone || "",
+            phase: item.Phase || item.phase || "",
+            due_date: item.Due_Date || item.due_date || "",
+            status: item.Status || item.status || "",
+            progress: Number(item.Progress || item.progress || 0),
+          }),
         },
         "Action Log": {
           table: "action_log",
-          identifierField: "action_id",
-          fields: [
-            "action_id",
-            "description",
-            "owner",
-            "due_date",
-            "status",
-            "source",
-          ],
-          fieldMappings: {
-            action_id: [
-              "action_id",
-              "Action ID",
-              "Action_ID",
-              "ActionID",
-              "ACTION_ID",
-            ],
-            description: ["description", "Description", "DESCRIPTION"],
-            owner: ["owner", "Owner", "OWNER"],
-            due_date: [
-              "due_date",
-              "Due Date",
-              "Due_Date",
-              "DueDate",
-              "DUE_DATE",
-            ],
-            status: ["status", "Status", "STATUS"],
-            source: ["source", "Source", "SOURCE"],
-          },
+          uniqueField: "action_id",
+          transform: (item: any) => ({
+            action_id: item.Action_ID || item.action_id || "",
+            description: item.Description || item.description || "",
+            owner: item.Owner || item.owner || "",
+            due_date: item.Due_Date || item.due_date || "",
+            status: item.Status || item.status || "",
+            source: item.Source || item.source || "",
+          }),
         },
         "Material Procurement": {
           table: "material_procurement",
-          identifierField: "material_id",
-          fields: [
-            "material_id",
-            "material_name",
-            "supplier",
-            "initiation_date",
-            "required_date",
-            "lead_time_days",
-            "status",
-          ],
-          fieldMappings: {
-            material_id: [
-              "material_id",
-              "Material ID",
-              "Material_ID",
-              "MaterialID",
-              "MATERIAL_ID",
-            ],
-            material_name: [
-              "material_name",
-              "Material Name",
-              "Material_Name",
-              "MaterialName",
-              "MATERIAL_NAME",
-            ],
-            supplier: ["supplier", "Supplier", "SUPPLIER"],
-            initiation_date: [
-              "initiation_date",
-              "Initiation Date",
-              "Initiation_Date",
-              "InitiationDate",
-              "INITIATION_DATE",
-            ],
-            required_date: [
-              "required_date",
-              "Required Date",
-              "Required_Date",
-              "RequiredDate",
-              "REQUIRED_DATE",
-            ],
-            lead_time_days: [
-              "lead_time_days",
-              "Lead Time Days",
-              "Lead_Time_Days",
-              "LeadTimeDays",
-              "LEAD_TIME_DAYS",
-            ],
-            status: ["status", "Status", "STATUS"],
-          },
+          uniqueField: "material_id",
+          transform: (item: any) => ({
+            material_id: item.Material_ID || item.material_id || "",
+            material_name: item.Material_Name || item.material_name || "",
+            supplier: item.Supplier || item.supplier || "",
+            initiation_date: item.Initiation_Date || item.initiation_date || "",
+            required_date: item.Required_Date || item.required_date || "",
+            lead_time_days: Number(item.Lead_Time_Days || item.lead_time_days || 0),
+            status: item.Status || item.status || "",
+          }),
         },
         "Service Procurement": {
           table: "service_procurement",
-          identifierField: "service_id",
-          fields: [
-            "service_id",
-            "service_name",
-            "provider",
-            "initiation_date",
-            "required_date",
-            "lead_time_days",
-            "status",
-          ],
-          fieldMappings: {
-            service_id: [
-              "service_id",
-              "Service ID",
-              "Service_ID",
-              "ServiceID",
-              "SERVICE_ID",
-            ],
-            service_name: [
-              "service_name",
-              "Service Name",
-              "Service_Name",
-              "ServiceName",
-              "SERVICE_NAME",
-            ],
-            provider: ["provider", "Provider", "PROVIDER"],
-            initiation_date: [
-              "initiation_date",
-              "Initiation Date",
-              "Initiation_Date",
-              "InitiationDate",
-              "INITIATION_DATE",
-            ],
-            required_date: [
-              "required_date",
-              "Required Date",
-              "Required_Date",
-              "RequiredDate",
-              "REQUIRED_DATE",
-            ],
-            lead_time_days: [
-              "lead_time_days",
-              "Lead Time Days",
-              "Lead_Time_Days",
-              "LeadTimeDays",
-              "LEAD_TIME_DAYS",
-            ],
-            status: ["status", "Status", "STATUS"],
-          },
+          uniqueField: "service_id",
+          transform: (item: any) => ({
+            service_id: item.Service_ID || item.service_id || "",
+            service_name: item.Service_Name || item.service_name || "",
+            provider: item.Provider || item.provider || "",
+            initiation_date: item.Initiation_Date || item.initiation_date || "",
+            required_date: item.Required_Date || item.required_date || "",
+            lead_time_days: Number(item.Lead_Time_Days || item.lead_time_days || 0),
+            status: item.Status || item.status || "",
+          }),
         },
         "Comments-Notes": {
           table: "comments_notes",
-          identifierField: "comment",
-          fields: ["comment", "author", "category", "date"],
-          fieldMappings: {
-            comment: ["comment", "Comment", "COMMENT"],
-            author: ["author", "Author", "AUTHOR"],
-            category: ["category", "Category", "CATEGORY"],
-            date: ["date", "Date", "DATE"],
-          },
+          uniqueField: "comment",
+          transform: (item: any) => ({
+            comment: item.Comment || item.comment || "",
+            author: item.Author || item.author || "",
+            category: item.Category || item.category || "",
+            date: item.Date || item.date || "",
+          }),
         },
         "Deliverables Status": {
           table: "deliverables_status",
-          identifierField: "deliverable",
-          fields: [
-            "deliverable",
-            "phase",
-            "owner",
-            "due_date",
-            "status",
-            "progress",
-          ],
-          fieldMappings: {
-            deliverable: ["deliverable", "Deliverable", "DELIVERABLE"],
-            phase: ["phase", "Phase", "PHASE"],
-            owner: ["owner", "Owner", "OWNER"],
-            due_date: [
-              "due_date",
-              "Due Date",
-              "Due_Date",
-              "DueDate",
-              "DUE_DATE",
-            ],
-            status: ["status", "Status", "STATUS"],
-            progress: ["progress", "Progress", "PROGRESS"],
-          },
+          uniqueField: "deliverable",
+          transform: (item: any) => ({
+            deliverable: item.Deliverable || item.deliverable || "",
+            phase: item.Phase || item.phase || "",
+            owner: item.Owner || item.owner || "",
+            due_date: item.Due_Date || item.due_date || "",
+            status: item.Status || item.status || "",
+            progress: Number(item.Progress || item.progress || 0),
+          }),
         },
       };
 
@@ -347,94 +199,54 @@ export const SupabaseDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
           for (const item of rows) {
             try {
-              // Map Excel column names to database fields
-              const upsertData: { [key: string]: any } = {};
-
-              for (const [dbField, excelVariations] of Object.entries(
-                mapping.fieldMappings,
-              )) {
-                let value = undefined;
-
-                // Try each variation until we find a match
-                for (const variation of excelVariations) {
-                  if (
-                    item[variation] !== undefined &&
-                    item[variation] !== null &&
-                    item[variation] !== ""
-                  ) {
-                    value = item[variation];
-                    break;
-                  }
-                }
-
-                if (value !== undefined) {
-                  // Convert numeric fields appropriately
-                  if (
-                    [
-                      "target",
-                      "actual",
-                      "probability",
-                      "impact",
-                      "risk_score",
-                      "progress",
-                      "lead_time_days",
-                    ].includes(dbField)
-                  ) {
-                    upsertData[dbField] = Number(value) || 0;
-                  } else {
-                    upsertData[dbField] = String(value).trim();
-                  }
-                }
-              }
-
-              // Check if we have the identifier field
-              if (!upsertData[mapping.identifierField]) {
-                errors.push(
-                  `Missing identifier field '${mapping.identifierField}' in ${sheetName}`,
-                );
-                errorCount++;
+              const transformedData = mapping.transform(item);
+              
+              // Skip rows with empty unique identifiers
+              if (!transformedData[mapping.uniqueField] || transformedData[mapping.uniqueField].toString().trim() === "") {
+                console.log(`Skipping row with empty ${mapping.uniqueField} in ${sheetName}`);
                 continue;
               }
 
-              // First, try to find existing record
-              const identifierValue = upsertData[mapping.identifierField];
+              // Check if record exists
               const { data: existingRecord } = await supabase
                 .from(mapping.table)
                 .select("id")
-                .eq(mapping.identifierField, identifierValue)
+                .eq(mapping.uniqueField, transformedData[mapping.uniqueField])
                 .maybeSingle();
 
               if (existingRecord) {
                 // Update existing record
                 const { error } = await supabase
                   .from(mapping.table)
-                  .update(upsertData)
+                  .update(transformedData)
                   .eq("id", existingRecord.id);
 
                 if (error) {
                   errors.push(`Error updating ${sheetName}: ${error.message}`);
                   errorCount++;
+                  console.error(`Update error in ${sheetName}:`, error);
                 } else {
                   successCount++;
+                  console.log(`Updated record in ${sheetName}:`, transformedData[mapping.uniqueField]);
                 }
               } else {
                 // Insert new record
                 const { error } = await supabase
                   .from(mapping.table)
-                  .insert(upsertData);
+                  .insert(transformedData);
 
                 if (error) {
                   errors.push(`Error inserting ${sheetName}: ${error.message}`);
                   errorCount++;
+                  console.error(`Insert error in ${sheetName}:`, error);
                 } else {
                   successCount++;
+                  console.log(`Inserted new record in ${sheetName}:`, transformedData[mapping.uniqueField]);
                 }
               }
             } catch (rowError) {
               console.error(`Error processing row in ${sheetName}:`, rowError);
-              errors.push(
-                `Error in ${sheetName}: ${rowError.message || "Unknown error"}`,
-              );
+              errors.push(`Error in ${sheetName}: ${rowError.message || "Unknown error"}`);
               errorCount++;
             }
           }

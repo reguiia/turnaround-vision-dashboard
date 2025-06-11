@@ -5,6 +5,7 @@ export type Json =
   | null
   | { [key: string]: Json | undefined }
   | Json[]
+
 export type Database = {
   public: {
     Tables: {
@@ -20,7 +21,7 @@ export type Database = {
           status: string
           updated_at: string
         }
-        upsert: {
+        Insert: {
           action_id: string
           created_at?: string
           description: string
@@ -43,9 +44,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-        onConflict: 'action_id',
-        ignoreDuplicates: false,
-        columns: ['action_id', 'source', 'description', 'status', 'due_date', 'owner']
       }
       bookies_data: {
         Row: {
@@ -56,7 +54,7 @@ export type Database = {
           target: number
           updated_at: string
         }
-        upsert: {
+        Insert: {
           actual: number
           area: string
           created_at?: string
@@ -73,7 +71,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-        onConflict: 'id'
       }
       comments_notes: {
         Row: {
@@ -85,7 +82,7 @@ export type Database = {
           id: string
           updated_at: string
         }
-        upsert: {
+        Insert: {
           author: string
           category: string
           comment: string
@@ -104,7 +101,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-        onConflict: 'id'
       }
       deliverables_status: {
         Row: {
@@ -118,7 +114,7 @@ export type Database = {
           status: string
           updated_at: string
         }
-        upsert: {
+        Insert: {
           created_at?: string
           deliverable: string
           due_date: string
@@ -141,7 +137,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-        onConflict: 'id'
       }
       general_info: {
         Row: {
@@ -151,7 +146,7 @@ export type Database = {
           updated_at: string
           value: string
         }
-        upsert: {
+        Insert: {
           created_at?: string
           field: string
           id?: string
@@ -166,7 +161,6 @@ export type Database = {
           value?: string
         }
         Relationships: []
-        onConflict: 'field'
       }
       material_procurement: {
         Row: {
@@ -181,7 +175,7 @@ export type Database = {
           supplier: string
           updated_at: string
         }
-        upsert: {
+        Insert: {
           created_at?: string
           id?: string
           initiation_date: string
@@ -206,7 +200,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-        onConflict: 'id'
       }
       milestones: {
         Row: {
@@ -219,7 +212,7 @@ export type Database = {
           status: string
           updated_at: string
         }
-        upsert: {
+        Insert: {
           created_at?: string
           due_date: string
           id?: string
@@ -240,7 +233,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-        onConflict: 'id'
       }
       risks: {
         Row: {
@@ -254,7 +246,7 @@ export type Database = {
           risk_score: number
           updated_at: string
         }
-        upsert: {
+        Insert: {
           created_at?: string
           id?: string
           impact: number
@@ -277,7 +269,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-        onConflict: 'id'
       }
       service_procurement: {
         Row: {
@@ -292,7 +283,7 @@ export type Database = {
           status: string
           updated_at: string
         }
-        upsert: {
+        Insert: {
           created_at?: string
           id?: string
           initiation_date: string
@@ -317,7 +308,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-        onConflict: 'id'
       }
     }
     Views: {
@@ -336,6 +326,7 @@ export type Database = {
 }
 
 type DefaultSchema = Database[Extract<keyof Database, "public">]
+
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
@@ -362,7 +353,8 @@ export type Tables<
       ? R
       : never
     : never
-export type Tablesupsert<
+
+export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
@@ -373,17 +365,18 @@ export type Tablesupsert<
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
   ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      upsert: infer I
+      Insert: infer I
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        upsert: infer I
+        Insert: infer I
       }
       ? I
       : never
     : never
+
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
@@ -406,6 +399,7 @@ export type TablesUpdate<
       ? U
       : never
     : never
+
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
@@ -420,6 +414,7 @@ export type Enums<
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
+
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
@@ -434,6 +429,7 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
 export const Constants = {
   public: {
     Enums: {},
