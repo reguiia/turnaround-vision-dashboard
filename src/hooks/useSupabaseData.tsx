@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -77,7 +76,7 @@ export const useSupabaseData = () => {
         supabase.from('deliverables_status').delete().neq('id', '00000000-0000-0000-0000-000000000000')
       ]);
 
-      // Now insert new data - properly construct the operations array
+      // Now insert new data - properly execute the upsert operations
       const insertOperations: Promise<any>[] = [];
 
       // Insert General Info
@@ -86,7 +85,7 @@ export const useSupabaseData = () => {
           field: item.Field || item.field,
           value: item.Value || item.value,
         }));
-        insertOperations.push(supabase.from('general_info').upsert(generalInfoData));
+        insertOperations.push(supabase.from('general_info').upsert(generalInfoData).then(result => result));
       }
 
       // Insert Bookies Data
@@ -96,7 +95,7 @@ export const useSupabaseData = () => {
           target: item.Target || item.target,
           actual: item.Actual || item.actual,
         }));
-        insertOperations.push(supabase.from('bookies_data').upsert(bookiesData));
+        insertOperations.push(supabase.from('bookies_data').upsert(bookiesData).then(result => result));
       }
 
       // Insert Risks
@@ -109,7 +108,7 @@ export const useSupabaseData = () => {
           risk_score: item.Risk_Score || item.risk_score,
           mitigation: item.Mitigation || item.mitigation || null,
         }));
-        insertOperations.push(supabase.from('risks').upsert(risksData));
+        insertOperations.push(supabase.from('risks').upsert(risksData).then(result => result));
       }
 
       // Insert Milestones
@@ -121,7 +120,7 @@ export const useSupabaseData = () => {
           status: item.Status || item.status,
           progress: item.Progress || item.progress || 0,
         }));
-        insertOperations.push(supabase.from('milestones').upsert(milestonesData));
+        insertOperations.push(supabase.from('milestones').upsert(milestonesData).then(result => result));
       }
 
       // Insert Action Log
@@ -134,7 +133,7 @@ export const useSupabaseData = () => {
           status: item.Status || item.status,
           source: item.Source || item.source,
         }));
-        insertOperations.push(supabase.from('action_log').upsert(actionLogData));
+        insertOperations.push(supabase.from('action_log').upsert(actionLogData).then(result => result));
       }
 
       // Insert Material Procurement
@@ -148,7 +147,7 @@ export const useSupabaseData = () => {
           lead_time_days: item.Lead_Time_Days || item.lead_time_days,
           status: item.Status || item.status,
         }));
-        insertOperations.push(supabase.from('material_procurement').upsert(materialData));
+        insertOperations.push(supabase.from('material_procurement').upsert(materialData).then(result => result));
       }
 
       // Insert Service Procurement
@@ -162,7 +161,7 @@ export const useSupabaseData = () => {
           lead_time_days: item.Lead_Time_Days || item.lead_time_days,
           status: item.Status || item.status,
         }));
-        insertOperations.push(supabase.from('service_procurement').upsert(serviceData));
+        insertOperations.push(supabase.from('service_procurement').upsert(serviceData).then(result => result));
       }
 
       // Insert Comments-Notes
@@ -173,7 +172,7 @@ export const useSupabaseData = () => {
           category: item.Category || item.category,
           date: item.Date || item.date,
         }));
-        insertOperations.push(supabase.from('comments_notes').upsert(commentsData));
+        insertOperations.push(supabase.from('comments_notes').upsert(commentsData).then(result => result));
       }
 
       // Insert Deliverables Status
@@ -186,7 +185,7 @@ export const useSupabaseData = () => {
           status: item.Status || item.status,
           progress: item.Progress || item.progress || 0,
         }));
-        insertOperations.push(supabase.from('deliverables_status').upsert(deliverablesData));
+        insertOperations.push(supabase.from('deliverables_status').upsert(deliverablesData).then(result => result));
       }
 
       // Execute all insertions
